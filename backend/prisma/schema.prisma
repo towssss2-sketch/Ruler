@@ -7,7 +7,8 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// 阶段 0 开发环境探针，不包含案件或用户数据；业务 Schema 留到阶段 1。
+// 完整业务模型位于本目录各 .prisma 文件（Prisma 6 原生多文件 Schema）。
+// 阶段 0 开发环境探针保留，升级迁移不丢失旧探针数据。
 model EnvironmentProbe {
   id        String   @id @default(uuid()) @db.Uuid
   label     String

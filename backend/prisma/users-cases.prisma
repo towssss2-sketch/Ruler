@@ -1,0 +1,113 @@
+model User {
+  id                String    @id @default(uuid()) @db.Uuid
+  email             String?   @unique @db.VarChar(254)
+  /// @sensitive @encrypted AES-256-GCM，禁止保存明文手机号。
+  phone             Bytes?    @db.ByteA
+  /// @sensitive @blind-index HMAC-SHA-256，供手机号唯一性和后续登录查询。
+  phoneLookupHash   Bytes?    @unique @db.ByteA
+  /// @sensitive @hashed 密码只保存不可逆哈希，不参与 AES 解密。
+  passwordHash      String    @db.Text
+  name              String    @db.VarChar(128)
+  /// @sensitive @encrypted 执业证号。
+  barLicenseNo      Bytes?    @db.ByteA
+  tier              UserTier  @default(FREE)
+  tierExpireAt      DateTime? @db.Timestamptz(3)
+  storageQuotaBytes BigInt    @default(1073741824)
+  storageUsedBytes  BigInt    @default(0)
+  createdAt         DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime  @updatedAt @db.Timestamptz(3)
+  deletedAt         DateTime? @db.Timestamptz(3)
+
+  ownedCases         Case[]            @relation("CaseOwner")
+  memberships        CaseMember[]      @relation("MemberUser")
+  invitationsSent    CaseMember[]      @relation("MemberInviter")
+  uploadedDocuments  Document[]        @relation("DocumentUploader")
+  ingestions         IngestionRecord[]
+  draftsCreated      DocumentDraft[]
+  emailBindings      EmailBinding[]
+  confirmedDeadlines Task[]            @relation("DeadlineConfirmer")
+  clientAccessGrants ClientAccess[]
+  auditLogs          AuditLog[]
+  wallet             RTWallet?
+}
+
+model Case {
+  id         String     @id @default(uuid()) @db.Uuid
+  ownerId    String     @db.Uuid
+  caseNo     String     @db.VarChar(80)
+  cause      String     @db.VarChar(128)
+  court      String     @db.VarChar(128)
+  judge      String?    @db.VarChar(128)
+  clerk      String?    @db.VarChar(128)
+  /// @sensitive @encrypted 法院联系人手机号。
+  clerkPhone Bytes?     @db.ByteA
+  fee        Decimal?   @db.Decimal(14, 2)
+  feeStatus  FeeStatus  @default(UNPAID)
+  stage      CaseStage  @default(FIRST_INSTANCE)
+  status     CaseStatus @default(ACTIVE)
+  /// @sensitive @encrypted 自由文本备注可能包含案情信息。
+  notes      Bytes?     @db.ByteA
+  createdAt  DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime   @updatedAt @db.Timestamptz(3)
+  deletedAt  DateTime?  @db.Timestamptz(3)
+
+  owner          User              @relation("CaseOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  parties        CaseParty[]
+  members        CaseMember[]
+  documents      Document[]
+  ingestions     IngestionRecord[]
+  tasks          Task[]
+  timelineEvents TimelineEvent[]
+  analyses       CaseAnalysis[]
+  drafts         DocumentDraft[]
+  clientAccesses ClientAccess[]
+  clientLogs     ClientAccessLog[]
+  auditLogs      AuditLog[]
+
+  // 活跃案件的 ownerId+caseNo+court 唯一由 SQL 部分唯一索引实现，保留软删除历史。
+  @@index([ownerId, caseNo, court])
+  @@index([ownerId, status, updatedAt])
+}
+
+model CaseParty {
+  id        String    @id @default(uuid()) @db.Uuid
+  caseId    String    @db.Uuid
+  role      PartyRole
+  name      String    @db.VarChar(128)
+  /// @sensitive @encrypted 身份证号。
+  idCard    Bytes?    @db.ByteA
+  /// @sensitive @encrypted 当事人手机号。
+  phone     Bytes?    @db.ByteA
+  /// @sensitive @encrypted 当事人联系地址。
+  address   Bytes?    @db.ByteA
+  createdAt DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime  @updatedAt @db.Timestamptz(3)
+  deletedAt DateTime? @db.Timestamptz(3)
+
+  case           Case           @relation(fields: [caseId], references: [id], onDelete: Restrict)
+  clientAccesses ClientAccess[]
+
+  @@unique([id, caseId])
+  @@index([caseId, role])
+}
+
+model CaseMember {
+  id         String       @id @default(uuid()) @db.Uuid
+  caseId     String       @db.Uuid
+  userId     String       @db.Uuid
+  role       MemberRole   @default(VIEWER)
+  invitedBy  String       @db.Uuid
+  invitedAt  DateTime     @default(now()) @db.Timestamptz(3)
+  acceptedAt DateTime?    @db.Timestamptz(3)
+  status     MemberStatus @default(PENDING)
+  createdAt  DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime     @updatedAt @db.Timestamptz(3)
+  deletedAt  DateTime?    @db.Timestamptz(3)
+
+  case    Case @relation(fields: [caseId], references: [id], onDelete: Restrict)
+  user    User @relation("MemberUser", fields: [userId], references: [id], onDelete: Restrict)
+  inviter User @relation("MemberInviter", fields: [invitedBy], references: [id], onDelete: Restrict)
+
+  @@unique([caseId, userId])
+  @@index([userId, status])
+}

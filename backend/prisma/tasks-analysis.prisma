@@ -1,0 +1,86 @@
+model Task {
+  id                    String        @id @default(uuid()) @db.Uuid
+  caseId                String        @db.Uuid
+  title                 String        @db.VarChar(255)
+  /// @sensitive @encrypted 任务自由文本描述。
+  description           Bytes?        @db.ByteA
+  dueDate               DateTime?     @db.Date
+  status                TaskStatus    @default(TODO)
+  source                TaskSource    @default(MANUAL)
+  isClientVisible       Boolean       @default(false)
+  completedAt           DateTime?     @db.Timestamptz(3)
+  deadlineType          DeadlineType?
+  baseDate              DateTime?     @db.Date
+  // 候选截止日不等于已确认法定期间；未确认的 DEADLINE_RULE 任务不得填 dueDate。
+  proposedDueDate       DateTime?     @db.Date
+  deadlineConfirmedAt   DateTime?     @db.Timestamptz(3)
+  deadlineConfirmedById String?       @db.Uuid
+  deadlineRuleVersion   String?       @db.VarChar(64)
+  alertDays             Json          @default("[7,3,1]")
+  lastAlertedAt         DateTime?     @db.Timestamptz(3)
+  createdAt             DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt             DateTime      @updatedAt @db.Timestamptz(3)
+  deletedAt             DateTime?     @db.Timestamptz(3)
+
+  case              Case  @relation(fields: [caseId], references: [id], onDelete: Restrict)
+  deadlineConfirmer User? @relation("DeadlineConfirmer", fields: [deadlineConfirmedById], references: [id], onDelete: Restrict)
+
+  @@index([caseId, dueDate, status])
+}
+
+model TimelineEvent {
+  id               String    @id @default(uuid()) @db.Uuid
+  caseId           String    @db.Uuid
+  eventDate        DateTime  @db.Date
+  title            String    @db.VarChar(255)
+  /// @sensitive @encrypted 案情时间轴描述。
+  description      Bytes?    @db.ByteA
+  sourceDocumentId String?   @db.Uuid
+  isAiGenerated    Boolean   @default(false)
+  createdAt        DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime  @updatedAt @db.Timestamptz(3)
+  deletedAt        DateTime? @db.Timestamptz(3)
+
+  case     Case      @relation(fields: [caseId], references: [id], onDelete: Restrict)
+  document Document? @relation(fields: [sourceDocumentId, caseId], references: [id, caseId], onDelete: Restrict)
+
+  @@index([caseId, eventDate])
+}
+
+model CaseAnalysis {
+  id           String    @id @default(uuid()) @db.Uuid
+  caseId       String    @db.Uuid
+  /// @sensitive @encrypted 案情简介，服务层解密恢复文本。
+  summary      Bytes     @db.ByteA
+  generatedAt  DateTime  @default(now()) @db.Timestamptz(3)
+  modelVersion String    @db.VarChar(128)
+  isConfirmed  Boolean   @default(false)
+  createdAt    DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime  @updatedAt @db.Timestamptz(3)
+  deletedAt    DateTime? @db.Timestamptz(3)
+
+  case Case @relation(fields: [caseId], references: [id], onDelete: Restrict)
+
+  @@index([caseId, generatedAt])
+}
+
+model DocumentDraft {
+  id                String      @id @default(uuid()) @db.Uuid
+  caseId            String      @db.Uuid
+  docType           DraftType
+  /// @sensitive @encrypted 富文本 JSON 序列化后加密，服务层解密恢复 JSON。
+  content           Bytes       @db.ByteA
+  modelVersion      String      @db.VarChar(128)
+  status            DraftStatus @default(DRAFT)
+  adoptedDocumentId String?     @db.Uuid
+  createdBy         String      @db.Uuid
+  createdAt         DateTime    @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime    @updatedAt @db.Timestamptz(3)
+  deletedAt         DateTime?   @db.Timestamptz(3)
+
+  case     Case      @relation(fields: [caseId], references: [id], onDelete: Restrict)
+  creator  User      @relation(fields: [createdBy], references: [id], onDelete: Restrict)
+  document Document? @relation(fields: [adoptedDocumentId, caseId], references: [id, caseId], onDelete: Restrict)
+
+  @@index([caseId, status])
+}

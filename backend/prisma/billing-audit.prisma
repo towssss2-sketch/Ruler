@@ -1,0 +1,70 @@
+model AuditLog {
+  id           String    @id @default(uuid()) @db.Uuid
+  userId       String    @db.Uuid
+  caseId       String?   @db.Uuid
+  action       String    @db.VarChar(128)
+  resourceType String    @db.VarChar(64)
+  resourceId   String?   @db.Uuid
+  // 仅允许脱敏后的结构化元数据；不得放入案情正文、密钥或签名链接。
+  detail       Json      @default("{}")
+  ip           String?   @db.Inet
+  createdAt    DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime  @updatedAt @db.Timestamptz(3)
+  // 保留统一列，但 SQL 触发器禁止审计日志更新、删除或软删除。
+  deletedAt    DateTime? @db.Timestamptz(3)
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Restrict)
+  case Case? @relation(fields: [caseId], references: [id], onDelete: Restrict)
+
+  @@index([userId, createdAt])
+  @@index([caseId, createdAt])
+}
+
+model RTWallet {
+  id            String    @id @default(uuid()) @db.Uuid
+  userId        String    @unique @db.Uuid
+  balance       Decimal   @default(0) @db.Decimal(20, 6)
+  totalCharged  Decimal   @default(0) @db.Decimal(20, 6)
+  totalConsumed Decimal   @default(0) @db.Decimal(20, 6)
+  createdAt     DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime  @updatedAt @db.Timestamptz(3)
+  deletedAt     DateTime? @db.Timestamptz(3)
+
+  user         User            @relation(fields: [userId], references: [id], onDelete: Restrict)
+  transactions RTTransaction[]
+}
+
+model RTTransaction {
+  id                String            @id @default(uuid()) @db.Uuid
+  walletId          String            @db.Uuid
+  // 全局单调序号用于确定钱包最后一笔流水；不是业务主键。
+  sequence          BigInt            @unique @default(autoincrement())
+  type              RTTransactionType
+  amount            Decimal           @db.Decimal(20, 6)
+  balanceAfter      Decimal           @db.Decimal(20, 6)
+  // 订单业务留待阶段 10；本阶段预留 UUID，不虚构支付订单或回调。
+  relatedOrderId    String?           @db.Uuid
+  relatedResourceId String?           @db.Uuid
+  remark            String?           @db.VarChar(255)
+  createdAt         DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime          @updatedAt @db.Timestamptz(3)
+  // SQL 触发器禁止更新、删除和软删除流水。
+  deletedAt         DateTime?         @db.Timestamptz(3)
+
+  wallet RTWallet @relation(fields: [walletId], references: [id], onDelete: Restrict)
+
+  @@index([walletId, sequence])
+}
+
+model PriceConfig {
+  id        String        @id @default(uuid()) @db.Uuid
+  itemKey   String        @unique @db.VarChar(128)
+  itemType  PriceItemType
+  rtPrice   Decimal       @db.Decimal(20, 6)
+  yuanPrice Decimal?      @db.Decimal(14, 2)
+  quota     Json          @default("{}")
+  enabled   Boolean       @default(false)
+  createdAt DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime      @updatedAt @db.Timestamptz(3)
+  deletedAt DateTime?     @db.Timestamptz(3)
+}

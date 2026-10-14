@@ -1,0 +1,151 @@
+enum UserTier {
+  FREE
+  PLUS
+  PREMIUM
+}
+
+enum CaseStage {
+  FIRST_INSTANCE
+  SECOND_INSTANCE
+  ENFORCEMENT
+  RETRIAL
+}
+
+enum CaseStatus {
+  ACTIVE
+  CLOSED
+}
+
+enum FeeStatus {
+  UNPAID
+  PARTIAL
+  PAID
+  WAIVED
+}
+
+enum PartyRole {
+  PLAINTIFF
+  DEFENDANT
+  THIRD_PARTY
+}
+
+enum MemberRole {
+  OWNER
+  EDITOR
+  VIEWER
+}
+
+enum MemberStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
+}
+
+enum DocumentCategory {
+  PLEADING
+  DEFENSE
+  EVIDENCE
+  SUMMONS
+  AUTHORIZATION
+  HEARING_RECORD
+  REPRESENTATION
+  JUDGMENT
+  OTHER
+}
+
+enum DocumentSource {
+  MANUAL
+  SMS
+  EMAIL
+  WECHAT
+}
+
+enum IngestionChannel {
+  SMS
+  EMAIL
+  WECHAT
+}
+
+enum IngestionStatus {
+  PENDING_MATCH
+  MATCHED
+  ASSIGNED
+  IGNORED
+}
+
+enum IngestionStage {
+  RECEIVE
+  EXTRACT
+  CLASSIFY
+  MATCH
+  TASK_SUGGEST
+  COMPLETE
+}
+
+enum TaskStatus {
+  TODO
+  DONE
+}
+
+enum TaskSource {
+  MANUAL
+  AI_GENERATED
+  DEADLINE_RULE
+}
+
+enum DeadlineType {
+  APPEAL_PERIOD
+  EVIDENCE_PERIOD
+  PRESERVATION_RENEWAL
+  ENFORCEMENT_APPLICATION
+  OTHER
+}
+
+enum DraftType {
+  DEFENSE
+  REPRESENTATION
+}
+
+enum DraftStatus {
+  DRAFT
+  ADOPTED
+}
+
+enum EmailAuthType {
+  OAUTH
+  APP_PASSWORD
+}
+
+enum EmailBindingStatus {
+  ACTIVE
+  PAUSED
+  REVOKED
+}
+
+enum DeliveryMode {
+  DIRECT
+  API_LIST
+  LIST_PARSE
+  WEBVIEW_ASSIST
+  MANUAL
+}
+
+enum ClientAccessStatus {
+  PENDING
+  ACTIVE
+  REVOKED
+}
+
+enum RTTransactionType {
+  CHARGE
+  CONSUME_STORAGE
+  CONSUME_AI
+  REFUND
+  ADMIN_ADJUST
+}
+
+enum PriceItemType {
+  STORAGE
+  AI
+  EXCHANGE
+}

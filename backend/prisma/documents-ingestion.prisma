@@ -1,0 +1,82 @@
+model Document {
+  id               String           @id @default(uuid()) @db.Uuid
+  caseId           String           @db.Uuid
+  category         DocumentCategory
+  fileName         String           @db.VarChar(255)
+  storageKey       String           @unique @db.Text
+  mimeType         String           @db.VarChar(128)
+  sizeBytes        BigInt
+  // 同一逻辑文件的各版本共享此 ID；每条版本记录仍有独立 UUID。
+  versionGroupId   String           @default(uuid()) @db.Uuid
+  version          Int              @default(1)
+  isCurrentVersion Boolean          @default(true)
+  isClientVisible  Boolean          @default(false)
+  source           DocumentSource   @default(MANUAL)
+  ingestionId      String?          @db.Uuid
+  uploadedBy       String           @db.Uuid
+  uploadedAt       DateTime         @default(now()) @db.Timestamptz(3)
+  createdAt        DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime         @updatedAt @db.Timestamptz(3)
+  deletedAt        DateTime?        @db.Timestamptz(3)
+
+  case           Case             @relation(fields: [caseId], references: [id], onDelete: Restrict)
+  uploader       User             @relation("DocumentUploader", fields: [uploadedBy], references: [id], onDelete: Restrict)
+  // 活跃文档的案件/渠道一致性由延迟约束验证；软删除历史仍保留来源指针。
+  ingestion      IngestionRecord? @relation(fields: [ingestionId], references: [id], onDelete: Restrict)
+  timelineEvents TimelineEvent[]
+  adoptedDrafts  DocumentDraft[]
+
+  @@unique([id, caseId])
+  @@unique([caseId, versionGroupId, version])
+  @@index([caseId, category])
+}
+
+model IngestionRecord {
+  id             String           @id @default(uuid()) @db.Uuid
+  userId         String           @db.Uuid
+  channel        IngestionChannel
+  /// @sensitive @encrypted 短信/邮件/分享原始文本。
+  rawContent     Bytes            @db.ByteA
+  /// @sensitive @encrypted 送达链接属于访问凭据，不能放入明文 JSON。
+  deliveryLink   Bytes?           @db.ByteA
+  // 只保存内部对象存储键；不得存放签名 URL 或渠道令牌。
+  attachmentKeys Json             @default("[]")
+  aiResult       Json?
+  contentHash    String           @db.Char(64)
+  matchedCaseId  String?          @db.Uuid
+  status         IngestionStatus  @default(PENDING_MATCH)
+  stage          IngestionStage   @default(RECEIVE)
+  attemptCount   Int              @default(0)
+  lastErrorCode  String?          @db.VarChar(64)
+  nextRetryAt    DateTime?        @db.Timestamptz(3)
+  receivedAt     DateTime         @default(now()) @db.Timestamptz(3)
+  createdAt      DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime         @updatedAt @db.Timestamptz(3)
+  deletedAt      DateTime?        @db.Timestamptz(3)
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Restrict)
+  case      Case?      @relation(fields: [matchedCaseId], references: [id], onDelete: Restrict)
+  documents Document[]
+
+  @@unique([userId, channel, contentHash])
+  @@index([userId, status, receivedAt])
+  @@index([stage, nextRetryAt])
+}
+
+model EmailBinding {
+  id          String             @id @default(uuid()) @db.Uuid
+  userId      String             @db.Uuid
+  email       String             @db.VarChar(254)
+  authType    EmailAuthType
+  /// @sensitive @encrypted OAuth 凭据或应用密码，仅密文落库。
+  credentials Bytes              @db.ByteA
+  lastSyncAt  DateTime?          @db.Timestamptz(3)
+  status      EmailBindingStatus @default(PAUSED)
+  createdAt   DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime           @updatedAt @db.Timestamptz(3)
+  deletedAt   DateTime?          @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, email])
+}
