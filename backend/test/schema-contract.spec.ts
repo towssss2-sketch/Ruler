@@ -5,6 +5,7 @@ const businessModels = [
   'Task', 'TimelineEvent', 'CaseAnalysis', 'DocumentDraft', 'EmailBinding',
   'DeliveryPlatformRule', 'ClientAccess', 'ClientAccessLog', 'AuditLog',
   'RTWallet', 'RTTransaction', 'PriceConfig',
+  'AuthSession', 'RefreshCredential',
 ];
 
 function model(name: string): Prisma.DMMF.Model {
@@ -14,7 +15,7 @@ function model(name: string): Prisma.DMMF.Model {
 }
 
 describe('原始需求实体与通用列契约', (): void => {
-  it('全部 18 个业务实体及阶段 0 探针均存在', (): void => {
+  it('全部 18 个业务实体、2 个鉴权实体及阶段 0 探针均存在', (): void => {
     expect(Prisma.dmmf.datamodel.models.map((value): string => value.name).sort())
       .toEqual([...businessModels, 'EnvironmentProbe'].sort());
   });

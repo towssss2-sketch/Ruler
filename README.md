@@ -1,11 +1,11 @@
 # RULER
 
-律师案件管理系统的阶段 0 工程基座与阶段 1 数据模型。当前提供离线 Flutter 欢迎页、NestJS 健康检查、
+律师案件管理系统的阶段 0 工程基座、阶段 1 数据模型与阶段 2 开发鉴权。当前提供离线 Flutter 欢迎页、NestJS 健康检查、
 Prisma 开发迁移、PostgreSQL/Redis/MinIO 开发服务和实际 CI。
-登录、案件、文件、任务和计费等功能按原始需求后续逐项实现。
+邮箱验证码注册、登录、刷新、登出和资源权限验证接口已实现；客户端登录界面与案件、文件、任务和计费业务仍按阶段推进。验证码仅投递给虚构测试邮箱的进程内适配器，不发送真实邮件。
 
 项目所有者无需阅读代码或运行命令：查看 PR 中文验收报告，下载 CI 测试包体验。
-当前验证状态见 [阶段 1 验收报告](docs/阶段1验收报告.md)，阶段 0 的安装体验见 [阶段 0 验收报告](docs/阶段0验收报告.md)。
+当前验证状态见 [阶段 2 验收报告](docs/阶段2验收报告.md)，阶段 0 的安装体验见 [阶段 0 验收报告](docs/阶段0验收报告.md)。
 
 ## 下载与体验
 
@@ -15,7 +15,8 @@ GitHub → Actions → **RULER 检查与测试包** → 选择本 PR 的成功�
 - `ruler-windows-test-zip`：解压下载文件，再解压其中 `ruler-windows-test.zip`；
   保留全部 DLL 和 data 文件夹，双击 `ruler_client.exe`。
   CI 额外包含官方 Visual C++ x64 运行库，避免干净开发电脑缺少 CRT DLL。
-- 两个 coverage 文件包是自动检查证据，不是安装包。
+- `ruler-auth-validation`：解压后双击 `auth-acceptance.html` 查看中文自动验收场景，不需要读代码。
+- coverage 文件包与 schema JSON 是自动检查证据，不是安装包。
 
 打开后应看到“欢迎使用 RULER”和阶段说明，点击“查看本次交付范围”，返回，再切换系统深色主题。
 本版离线运行，不上传资料；不包含登录或业务数据录入。
@@ -32,6 +33,7 @@ Windows 构建需要 Windows 和 Visual Studio C++ 桌面工具；Linux 不能�
 
 ```bash
 node scripts/init-dev.mjs
+node scripts/init-auth-dev.mjs
 bash scripts/prepare-minio.sh
 docker compose up -d --build --wait
 cd backend
@@ -41,7 +43,7 @@ npm run prisma:validate
 npm run db:migrate
 npm run lint
 npm run typecheck
-npm run test:coverage
+npm run test:coverage  # 75 单测 + 20 真实鉴权 e2e，隔离 schema/Redis 前缀
 npm run test:integration
 npm run test:database
 npm run build
@@ -56,7 +58,8 @@ Compose 端口仅绑定 127.0.0.1。MinIO 使用固定官方发布包及 SHA-256
 GET /health 是进程存活检查；GET /health/ready 实际查询数据库，不可用返回 503。
 响应包含 code/message/data/traceId；未知接口返回 404，不回显输入或底层异常。
 运行 `node --env-file=.env scripts/http-smoke.mjs` 可验证已启动服务。
-仅用于开发，本基座拒绝 NODE_ENV=production。
+鉴权默认保护所有已注册业务接口；健康检查与鉴权入口明确公开。GET /docs 提供开发 Swagger，GET /auth/me 和 /users/me 返回当前用户最小信息。资源权限验证为 /cases/:caseId/access、/documents/:documentId/access、/tasks/:taskId/access；这些不等于业务 CRUD。
+邮箱方案避免短信权限与真实收费；验证码不在 HTTP、日志或公开取码接口返回。生产环境仍禁止启动。
 
 另一个终端：
 

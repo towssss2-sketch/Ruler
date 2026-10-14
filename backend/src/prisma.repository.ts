@@ -6,6 +6,11 @@ import { PrismaClient } from '@prisma/client';
 export class PrismaRepository implements OnModuleDestroy {
   private readonly client = new PrismaClient();
 
+  /** 提供同一生命周期内的 Prisma 客户端，供业务模块执行事务与实时权限查询。 */
+  get db(): PrismaClient {
+    return this.client;
+  }
+
   /** 执行无业务数据的参数化查询；失败交给服务层转换。 */
   async checkConnection(): Promise<void> {
     await this.client.$queryRaw`SELECT 1`;

@@ -1,7 +1,9 @@
 import { Controller, Get } from '@nestjs/common';
 import { HealthService, HealthStatus } from './health.service';
+import { PublicRoute } from './modules/auth/auth-decorators';
 
 @Controller('health')
+@PublicRoute()
 export class HealthController {
   constructor(private readonly service: HealthService) {}
 

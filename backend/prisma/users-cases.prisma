@@ -29,6 +29,7 @@ model User {
   clientAccessGrants ClientAccess[]
   auditLogs          AuditLog[]
   wallet             RTWallet?
+  authSessions       AuthSession[]
 }
 
 model Case {
