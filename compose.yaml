@@ -1,7 +1,7 @@
 name: ruler-dev
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
     environment:
       POSTGRES_USER: ${POSTGRES_USER:?请先运行 node scripts/init-dev.mjs}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?本地开发配置缺失}
@@ -14,7 +14,7 @@ services:
       timeout: 3s
       retries: 30
   redis:
-    image: redis:7-alpine
+    image: redis:7-alpine@sha256:858f009f9709ce576febc734aa78b8f6d624b82571f9ddb6bda4377c833b3499
     command: ["redis-server", "--appendonly", "yes"]
     ports: ["127.0.0.1:6379:6379"]
     volumes: ["redis-data:/data"]

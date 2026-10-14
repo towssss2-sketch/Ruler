@@ -7,7 +7,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: phase-0-${{ github.ref }}
+  group: phase-0-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 jobs:
   backend:

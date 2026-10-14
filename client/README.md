@@ -1,16 +1,6 @@
-# ruler_client
+# RULER 客户端
 
-A new Flutter project.
-
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Flutter 3.38.7 / Dart 3.10.7，当前为离线欢迎页测试版。
+安装和验收步骤见仓库根目录 README.md 与 docs/阶段0验收报告.md。
+Riverpod 管理阶段信息，go_router 管理欢迎页和范围说明导航；drift 缓存业务在后续阶段建立。
+无登录、案件信息录入或网络请求。
