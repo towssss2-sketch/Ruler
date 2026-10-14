@@ -54,6 +54,13 @@ jobs:
             test-results/auth-validation.json
             test-results/auth-acceptance.html
           if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ruler-case-validation
+          path: |
+            test-results/case-validation.json
+            test-results/case-acceptance.html
+          if-no-files-found: error
       - name: PostgreSQL、Redis、MinIO 功能检查
         working-directory: backend
         run: npm run test:integration

@@ -38,6 +38,7 @@ try {
   run(process.execPath, [resolve(backend, 'node_modules/jest/bin/jest.js'), '--config', 'jest.auth.cjs', '--runInBand',
     '--json', `--outputFile=${resolve(root, 'test-results/auth-validation.json')}`]);
   run(process.execPath, [resolve(root, 'scripts/render-auth-report.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/render-case-report.mjs')]);
 } finally {
   // Jest 测试负责清理本次专属 Redis 前缀；不清空 Redis 或任何现有 schema。
   if (created) ddl('SET client_min_messages TO WARNING; DROP SCHEMA :"owned_schema" CASCADE;\n');

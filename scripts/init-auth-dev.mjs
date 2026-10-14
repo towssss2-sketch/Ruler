@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 const path = fileURLToPath(new URL('../.env', import.meta.url));
 let contents = readFileSync(path, 'utf8');
 if (!/^NODE_ENV=(development|test)$/m.test(contents)) throw new Error('只允许明确开发或测试环境');
-for (const key of ['AUTH_SIGNING_KEY', 'AUTH_CHALLENGE_KEY']) {
+for (const key of ['AUTH_SIGNING_KEY', 'AUTH_CHALLENGE_KEY', 'FIELD_ENCRYPTION_KEY']) {
   if (!new RegExp(`^${key}=`, 'm').test(contents)) contents += `\n${key}=${randomBytes(32).toString('hex')}\n`;
 }
 writeFileSync(path, contents, { mode: 0o600 });

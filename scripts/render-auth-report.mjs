@@ -11,10 +11,10 @@ const rows = report.testResults.flatMap(suite => suite.assertionResults.map(test
   `<tr><td>${escape(test.fullName)}</td><td>${escape(statusText[test.status] ?? '未运行')}</td></tr>`)).join('\n');
 const status = report.success ? '自动检查通过，待用户验收' : '检查未通过，不能验收';
 writeFileSync(htmlPath, `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>RULER 阶段2自动验收证据</title><style>body{font:16px/1.6 system-ui;max-width:1000px;margin:2rem auto;padding:0 1rem;color:#172637}table{border-collapse:collapse;width:100%}td,th{padding:.5rem;border:1px solid #ccd4dc;text-align:left}th{background:#eaf1f8}</style>
-<h1>阶段2：鉴权自动验收证据</h1><p>${escape(status)}</p>
+<title>RULER 阶段2–3自动验收证据</title><style>body{font:16px/1.6 system-ui;max-width:1000px;margin:2rem auto;padding:0 1rem;color:#172637}table{border-collapse:collapse;width:100%}td,th{padding:.5rem;border:1px solid #ccd4dc;text-align:left}th{background:#eaf1f8}</style>
+<h1>阶段2–3：鉴权与案件管理自动验收证据</h1><p>${escape(status)}</p>
 <p>成功 ${report.numPassedTests}；失败 ${report.numFailedTests}；未运行 ${report.numPendingTests}。</p>
 <p>使用独立测试数据库与虚构邮箱。验证码只在测试进程内传递，没有真实邮件、法院、支付或 AI 调用。全局覆盖率门槛保持 80%。</p>
-<p>本阶段交付后端接口和资源守卫，客户端尚无登录界面。案件、文件和任务由测试准备，不能视为业务 CRUD 已完成。没有生产部署或自动合并。</p>
+<p>已交付鉴权与案件 CRUD 后端接口，客户端尚无登录/案件界面。案件 e2e 通过真实 HTTP 新建；文件和任务只用于测试准备，不表示对应业务模块已完成。没有生产部署或自动合并。</p>
 <table><thead><tr><th>已实际执行的中文场景</th><th>结果</th></tr></thead><tbody>${rows}</tbody></table></html>`, { mode: 0o600 });
 console.log('PASS 中文鉴权验收 HTML 已生成（无凭据/断言值/堆栈）');

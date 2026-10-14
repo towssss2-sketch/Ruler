@@ -15,7 +15,7 @@ const ready = await response.json();
 assert.deepEqual(ready.data, { status: 'ok', stage: 0 });
 assert.equal(ready.code, 0);
 assert.match(ready.traceId, /^[0-9a-f-]{36}$/);
-const unknown = await fetch(`${baseUrl}/cases?private=fictional-input`);
+const unknown = await fetch(`${baseUrl}/not-implemented?private=fictional-input`);
 assert.equal(unknown.status, 404);
 assert.equal((await unknown.text()).includes('fictional-input'), false);
 console.log('PASS 已构建后端：真实数据库就绪 HTTP 200、标准响应、未实现业务 404 和输入不回显');

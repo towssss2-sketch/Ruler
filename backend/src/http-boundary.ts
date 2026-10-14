@@ -6,6 +6,7 @@ import { randomUUID } from 'node:crypto';
 import { Request, Response } from 'express';
 import { Observable, map } from 'rxjs';
 import pino from 'pino';
+import { BizException } from './biz-exception';
 
 export interface ApiEnvelope<T> {
   code: number;
@@ -51,7 +52,8 @@ export class SafeExceptionFilter implements ExceptionFilter {
     logger.warn({ traceId, status }, '请求失败');
     const messages: Record<number, string> = { 400: '输入格式不正确', 401: '身份校验失败', 403: '无访问权限',
       404: '接口不存在', 409: '记录已存在', 429: '请求过于频繁' };
-    const message = messages[status] ?? '服务暂不可用';
-    response.status(status).json({ code: status, message, data: null, traceId });
+    const message = exception instanceof BizException ? exception.message : messages[status] ?? '服务暂不可用';
+    response.status(status).json({ code: exception instanceof BizException ? exception.code : status,
+      message, data: exception instanceof BizException ? exception.data : null, traceId });
   }
 }

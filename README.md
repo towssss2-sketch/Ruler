@@ -1,11 +1,11 @@
 # RULER
 
-律师案件管理系统的阶段 0 工程基座、阶段 1 数据模型与阶段 2 开发鉴权。当前提供离线 Flutter 欢迎页、NestJS 健康检查、
+律师案件管理系统的阶段 0 工程基座、阶段 1 数据模型、阶段 2 开发鉴权与阶段 3 案件管理。当前提供离线 Flutter 欢迎页、NestJS 健康检查、
 Prisma 开发迁移、PostgreSQL/Redis/MinIO 开发服务和实际 CI。
-邮箱验证码注册、登录、刷新、登出和资源权限验证接口已实现；客户端登录界面与案件、文件、任务和计费业务仍按阶段推进。验证码仅投递给虚构测试邮箱的进程内适配器，不发送真实邮件。
+邮箱验证码注册、登录、刷新、登出、资源权限验证和案件 CRUD/冲突检查接口已实现；客户端业务界面及文件、任务和计费业务仍按阶段推进。验证码仅投递给虚构测试邮箱的进程内适配器，不发送真实邮件。
 
 项目所有者无需阅读代码或运行命令：查看 PR 中文验收报告，下载 CI 测试包体验。
-当前验证状态见 [阶段 2 验收报告](docs/阶段2验收报告.md)，阶段 0 的安装体验见 [阶段 0 验收报告](docs/阶段0验收报告.md)。
+当前验证状态见 [阶段 3 验收报告](docs/阶段3验收报告.md)，阶段 0 的安装体验见 [阶段 0 验收报告](docs/阶段0验收报告.md)。
 
 ## 下载与体验
 
@@ -16,6 +16,7 @@ GitHub → Actions → **RULER 检查与测试包** → 选择本 PR 的成功�
   保留全部 DLL 和 data 文件夹，双击 `ruler_client.exe`。
   CI 额外包含官方 Visual C++ x64 运行库，避免干净开发电脑缺少 CRT DLL。
 - `ruler-auth-validation`：解压后双击 `auth-acceptance.html` 查看中文自动验收场景，不需要读代码。
+- `ruler-case-validation`：解压后双击 `case-acceptance.html` 查看案件专项中文验收结果。
 - coverage 文件包与 schema JSON 是自动检查证据，不是安装包。
 
 打开后应看到“欢迎使用 RULER”和阶段说明，点击“查看本次交付范围”，返回，再切换系统深色主题。
@@ -43,7 +44,7 @@ npm run prisma:validate
 npm run db:migrate
 npm run lint
 npm run typecheck
-npm run test:coverage  # 75 单测 + 20 真实鉴权 e2e，隔离 schema/Redis 前缀
+npm run test:coverage  # 111 单测 + 37 真实 HTTP e2e，隔离 schema/Redis 前缀
 npm run test:integration
 npm run test:database
 npm run build
@@ -51,6 +52,7 @@ npm start
 ```
 
 `init-dev.mjs` 随机生成仅供开发的 .env，已有文件不覆盖、不打印凭据。
+`init-auth-dev.mjs` 补充缺失的两把鉴权密钥与独立 FIELD_ENCRYPTION_KEY；已有字段密钥不可覆盖或遗失，否则已有密文无法解密。
 Compose 端口仅绑定 127.0.0.1。MinIO 使用固定官方发布包及 SHA-256 构建开发镜像，
 不依赖不可访问的 MinIO 镜像仓库。构建脚本当前只支持 Linux amd64，不用于生产。
 
@@ -60,6 +62,8 @@ GET /health 是进程存活检查；GET /health/ready 实际查询数据库，�
 运行 `node --env-file=.env scripts/http-smoke.mjs` 可验证已启动服务。
 鉴权默认保护所有已注册业务接口；健康检查与鉴权入口明确公开。GET /docs 提供开发 Swagger，GET /auth/me 和 /users/me 返回当前用户最小信息。资源权限验证为 /cases/:caseId/access、/documents/:documentId/access、/tasks/:taskId/access；这些不等于业务 CRUD。
 邮箱方案避免短信权限与真实收费；验证码不在 HTTP、日志或公开取码接口返回。生产环境仍禁止启动。
+案件真实接口包括 POST/GET /cases、GET/PATCH/DELETE /cases/:caseId、POST /cases/:caseId/conflict-check。
+输入、当事人列表更新和删除保护见 [阶段3案件管理约定](docs/阶段3案件管理约定.md)。
 
 另一个终端：
 
