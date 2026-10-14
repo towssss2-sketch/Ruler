@@ -1,0 +1,15 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 阶段 0 开发环境探针，不包含案件或用户数据；业务 Schema 留到阶段 1。
+model EnvironmentProbe {
+  id        String   @id @default(uuid()) @db.Uuid
+  label     String
+  createdAt DateTime @default(now())
+}

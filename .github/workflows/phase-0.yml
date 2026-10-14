@@ -1,0 +1,143 @@
+name: 阶段 0 检查与测试包
+on:
+  pull_request:
+  push:
+    branches: [main, "feat/**", "fix/**"]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: phase-0-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  backend:
+    name: 后端与开发服务
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: 扫描敏感文件
+        run: python3 scripts/check-secrets.py
+      - name: 初始化虚构开发环境
+        run: |
+          node scripts/init-dev.mjs
+          bash scripts/prepare-minio.sh
+          docker compose up -d --build --wait --wait-timeout 120
+      - name: 按锁文件安装并生成 Prisma
+        working-directory: backend
+        run: |
+          npm ci --no-audit --no-fund
+          npm run prisma:generate
+          npm run prisma:validate
+      - name: 真实迁移与重复执行检查
+        working-directory: backend
+        run: |
+          npm run db:migrate
+          npm run db:migrate
+      - name: lint、类型检查、单测与覆盖率
+        working-directory: backend
+        run: |
+          npm run lint
+          npm run typecheck
+          npm run test:coverage
+          npm run build
+      - name: PostgreSQL、Redis、MinIO 功能检查
+        working-directory: backend
+        run: npm run test:integration
+      - name: 实际启动已构建后端并检查 HTTP
+        working-directory: backend
+        shell: bash
+        run: |
+          node --env-file=../.env dist/main.js &
+          app_pid=$!
+          trap 'kill "$app_pid" 2>/dev/null || true; wait "$app_pid" 2>/dev/null || true' EXIT
+          node --env-file=../.env ../scripts/http-smoke.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ruler-backend-coverage
+          path: backend/coverage/
+          if-no-files-found: error
+      - name: 停止本次 CI 开发容器
+        if: always()
+        run: docker compose down --volumes
+  flutter-tests:
+    name: Flutter 分析与真实测试
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.38.7"
+          channel: stable
+          cache: true
+      - name: 安装、格式与分析
+        working-directory: client
+        run: |
+          flutter pub get --enforce-lockfile
+          dart format --output=none --set-exit-if-changed lib test
+          flutter analyze --no-pub
+      - name: Widget 与 Provider 测试
+        working-directory: client
+        run: flutter test --no-pub --coverage --reporter expanded
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ruler-flutter-coverage
+          path: client/coverage/lcov.info
+          if-no-files-found: error
+  android:
+    name: Android debug APK
+    needs: [backend, flutter-tests]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.38.7"
+          channel: stable
+          cache: true
+      - name: 构建测试 APK
+        working-directory: client
+        run: |
+          flutter pub get --enforce-lockfile
+          flutter build apk --debug --no-pub
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ruler-android-debug-apk
+          path: client/build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+  windows:
+    name: Windows 测试 ZIP
+    needs: [backend, flutter-tests]
+    runs-on: windows-2022
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.38.7"
+          channel: stable
+          cache: true
+      - name: 构建 Windows 测试包
+        working-directory: client
+        run: |
+          flutter pub get --enforce-lockfile
+          flutter build windows --release --no-pub
+          Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath ruler-windows-test.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ruler-windows-test-zip
+          path: client/ruler-windows-test.zip
+          if-no-files-found: error
+          retention-days: 14
