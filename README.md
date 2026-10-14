@@ -23,7 +23,7 @@ GitHub → Actions → **阶段 0 检查与测试包** → 选择本 PR 的成�
 ## 开发者环境与命令
 
 固定 Node 20.20.2、Flutter 3.38.7 / Dart 3.10.7、NestJS 10、Prisma 6；
-Android 编译需要完整 JDK 17（含 javac）、SDK 36、Build Tools 35.0.0、NDK 28.2.13676358。
+Android 编译需要完整 JDK 17（含 javac）、SDK 36、Build Tools 35.0.0、NDK 28.2.13676358、CMake 3.22.1。
 Windows 构建需要 Windows 和 Visual Studio C++ 桌面工具；Linux 不能生成 Windows 包。
 依赖依据见 [依赖与环境决策](docs/阶段0依赖与环境决策.md)。
 
