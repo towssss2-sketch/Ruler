@@ -25,6 +25,7 @@ const logger = pino({ base: undefined });
 export function requestTrace(request: TracedRequest, response: Response, next: () => void): void {
   request.traceId = randomUUID();
   response.setHeader('x-trace-id', request.traceId);
+  response.once('finish', (): void => { logger.info({ traceId: request.traceId, status: response.statusCode }, '请求完成'); });
   next();
 }
 
@@ -48,7 +49,9 @@ export class SafeExceptionFilter implements ExceptionFilter {
     const status = exception instanceof HttpException ? exception.getStatus() : 500;
     const traceId = request.traceId ?? randomUUID();
     logger.warn({ traceId, status }, '请求失败');
-    const message = status === 404 ? '接口不存在' : '服务暂不可用';
+    const messages: Record<number, string> = { 400: '输入格式不正确', 401: '身份校验失败', 403: '无访问权限',
+      404: '接口不存在', 409: '记录已存在', 429: '请求过于频繁' };
+    const message = messages[status] ?? '服务暂不可用';
     response.status(status).json({ code: status, message, data: null, traceId });
   }
 }

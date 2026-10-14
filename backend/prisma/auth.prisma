@@ -1,0 +1,26 @@
+// D-01：数据库是刷新会话真值来源；Redis 仅保存验证码和限流计数。
+model AuthSession {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  expiresAt DateTime  @db.Timestamptz(3)
+  revokedAt DateTime? @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime  @updatedAt @db.Timestamptz(3)
+  deletedAt DateTime? @db.Timestamptz(3)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  refreshTokens RefreshCredential[]
+  @@index([userId, revokedAt, expiresAt])
+}
+
+model RefreshCredential {
+  id         String    @id @default(uuid()) @db.Uuid
+  sessionId  String    @db.Uuid
+  /// @sensitive @hashed 256 位随机令牌的 SHA-256，仅摘要落库。
+  tokenHash  String    @unique @db.Char(64)
+  consumedAt DateTime? @db.Timestamptz(3)
+  createdAt  DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime  @updatedAt @db.Timestamptz(3)
+  deletedAt  DateTime? @db.Timestamptz(3)
+  session    AuthSession @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+  @@index([sessionId, consumedAt])
+}
