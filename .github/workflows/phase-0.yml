@@ -1,4 +1,4 @@
-name: 阶段 0 检查与测试包
+name: RULER 检查与测试包
 on:
   pull_request:
   push:
@@ -49,6 +49,14 @@ jobs:
       - name: PostgreSQL、Redis、MinIO 功能检查
         working-directory: backend
         run: npm run test:integration
+      - name: 空库、阶段0升级及数据库安全约束
+        working-directory: backend
+        run: npm run test:database
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ruler-schema-validation
+          path: test-results/schema-database.json
+          if-no-files-found: error
       - name: 实际启动已构建后端并检查 HTTP
         working-directory: backend
         shell: bash

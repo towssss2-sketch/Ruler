@@ -1,15 +1,15 @@
 # RULER
 
-律师案件管理系统的阶段 0 基础工程。当前提供离线 Flutter 欢迎页、NestJS 健康检查、
+律师案件管理系统的阶段 0 工程基座与阶段 1 数据模型。当前提供离线 Flutter 欢迎页、NestJS 健康检查、
 Prisma 开发迁移、PostgreSQL/Redis/MinIO 开发服务和实际 CI。
 登录、案件、文件、任务和计费等功能按原始需求后续逐项实现。
 
 项目所有者无需阅读代码或运行命令：查看 PR 中文验收报告，下载 CI 测试包体验。
-当前验证状态见 [阶段 0 验收报告](docs/阶段0验收报告.md)。
+当前验证状态见 [阶段 1 验收报告](docs/阶段1验收报告.md)，阶段 0 的安装体验见 [阶段 0 验收报告](docs/阶段0验收报告.md)。
 
 ## 下载与体验
 
-GitHub → Actions → **阶段 0 检查与测试包** → 选择本 PR 的成功运行 → Artifacts：
+GitHub → Actions → **RULER 检查与测试包** → 选择本 PR 的成功运行 → Artifacts：
 
 - `ruler-android-debug-apk`：解压后安装 `app-debug.apk`（测试签名，不是上架包）。
 - `ruler-windows-test-zip`：解压下载文件，再解压其中 `ruler-windows-test.zip`；
@@ -43,6 +43,7 @@ npm run lint
 npm run typecheck
 npm run test:coverage
 npm run test:integration
+npm run test:database
 npm run build
 npm start
 ```
@@ -72,8 +73,9 @@ flutter build apk --debug --no-pub        # Android 测试包，无正式签名
 
 停止开发服务：根目录 `docker compose down`，数据卷保留。
 只有丢弃全部虚构开发数据时才使用 `docker compose down --volumes`。
-迁移可重复部署；第 0 阶段仅有 EnvironmentProbe 测试表。
-该迁移回退限虚构开发库：丢弃开发卷并重建。不得在生产库执行此回退。
+阶段 1 使用 Prisma 原生多文件 schema（backend/prisma），包含 18 个业务模型及原 EnvironmentProbe。
+数据库测试自动创建、验证并清理两个独立临时 schema，覆盖空库和阶段 0 升级，不重置现有数据。
+迁移只向前追加，回退策略与尚未验证的生产恢复事项见阶段 1 验收报告。
 
 ## 云环境限制
 

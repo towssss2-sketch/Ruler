@@ -1,0 +1,73 @@
+BEGIN;
+
+-- CreateEnum
+CREATE TYPE "UserTier" AS ENUM ('FREE', 'PLUS', 'PREMIUM');
+
+-- CreateEnum
+CREATE TYPE "CaseStage" AS ENUM ('FIRST_INSTANCE', 'SECOND_INSTANCE', 'ENFORCEMENT', 'RETRIAL');
+
+-- CreateEnum
+CREATE TYPE "CaseStatus" AS ENUM ('ACTIVE', 'CLOSED');
+
+-- CreateEnum
+CREATE TYPE "FeeStatus" AS ENUM ('UNPAID', 'PARTIAL', 'PAID', 'WAIVED');
+
+-- CreateEnum
+CREATE TYPE "PartyRole" AS ENUM ('PLAINTIFF', 'DEFENDANT', 'THIRD_PARTY');
+
+-- CreateEnum
+CREATE TYPE "MemberRole" AS ENUM ('OWNER', 'EDITOR', 'VIEWER');
+
+-- CreateEnum
+CREATE TYPE "MemberStatus" AS ENUM ('PENDING', 'ACCEPTED', 'REVOKED');
+
+-- CreateEnum
+CREATE TYPE "DocumentCategory" AS ENUM ('PLEADING', 'DEFENSE', 'EVIDENCE', 'SUMMONS', 'AUTHORIZATION', 'HEARING_RECORD', 'REPRESENTATION', 'JUDGMENT', 'OTHER');
+
+-- CreateEnum
+CREATE TYPE "DocumentSource" AS ENUM ('MANUAL', 'SMS', 'EMAIL', 'WECHAT');
+
+-- CreateEnum
+CREATE TYPE "IngestionChannel" AS ENUM ('SMS', 'EMAIL', 'WECHAT');
+
+-- CreateEnum
+CREATE TYPE "IngestionStatus" AS ENUM ('PENDING_MATCH', 'MATCHED', 'ASSIGNED', 'IGNORED');
+
+-- CreateEnum
+CREATE TYPE "IngestionStage" AS ENUM ('RECEIVE', 'EXTRACT', 'CLASSIFY', 'MATCH', 'TASK_SUGGEST', 'COMPLETE');
+
+-- CreateEnum
+CREATE TYPE "TaskStatus" AS ENUM ('TODO', 'DONE');
+
+-- CreateEnum
+CREATE TYPE "TaskSource" AS ENUM ('MANUAL', 'AI_GENERATED', 'DEADLINE_RULE');
+
+-- CreateEnum
+CREATE TYPE "DeadlineType" AS ENUM ('APPEAL_PERIOD', 'EVIDENCE_PERIOD', 'PRESERVATION_RENEWAL', 'ENFORCEMENT_APPLICATION', 'OTHER');
+
+-- CreateEnum
+CREATE TYPE "DraftType" AS ENUM ('DEFENSE', 'REPRESENTATION');
+
+-- CreateEnum
+CREATE TYPE "DraftStatus" AS ENUM ('DRAFT', 'ADOPTED');
+
+-- CreateEnum
+CREATE TYPE "EmailAuthType" AS ENUM ('OAUTH', 'APP_PASSWORD');
+
+-- CreateEnum
+CREATE TYPE "EmailBindingStatus" AS ENUM ('ACTIVE', 'PAUSED', 'REVOKED');
+
+-- CreateEnum
+CREATE TYPE "DeliveryMode" AS ENUM ('DIRECT', 'API_LIST', 'LIST_PARSE', 'WEBVIEW_ASSIST', 'MANUAL');
+
+-- CreateEnum
+CREATE TYPE "ClientAccessStatus" AS ENUM ('PENDING', 'ACTIVE', 'REVOKED');
+
+-- CreateEnum
+CREATE TYPE "RTTransactionType" AS ENUM ('CHARGE', 'CONSUME_STORAGE', 'CONSUME_AI', 'REFUND', 'ADMIN_ADJUST');
+
+-- CreateEnum
+CREATE TYPE "PriceItemType" AS ENUM ('STORAGE', 'AI', 'EXCHANGE');
+
+
+COMMIT;
