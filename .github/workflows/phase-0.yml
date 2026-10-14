@@ -134,6 +134,21 @@ jobs:
         run: |
           flutter pub get --enforce-lockfile
           flutter build windows --release --no-pub
+      - name: 包含 Windows 所需的 Visual C++ 运行库
+        working-directory: client
+        shell: pwsh
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $vsPath = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if (-not $vsPath) { throw "缺少官方 Visual Studio C++ 运行库来源" }
+          $redist = Get-ChildItem "$vsPath\VC\Redist\MSVC" -Directory |
+            Sort-Object { [version]$_.Name } -Descending | Select-Object -First 1
+          $crtPath = "$($redist.FullName)\x64\Microsoft.VC143.CRT"
+          if (-not (Test-Path $crtPath)) { throw "未找到官方 x64 CRT 目录" }
+          Copy-Item "$crtPath\*.dll" build/windows/x64/runner/Release/
+          foreach ($name in @("ruler_client.exe", "flutter_windows.dll", "msvcp140.dll", "vcruntime140.dll", "vcruntime140_1.dll", "data/")) {
+            if (-not (Test-Path "build/windows/x64/runner/Release/$name")) { throw "Windows 包缺少 $name" }
+          }
           Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath ruler-windows-test.zip
       - uses: actions/upload-artifact@v4
         with:

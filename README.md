@@ -14,6 +14,7 @@ GitHub → Actions → **阶段 0 检查与测试包** → 选择本 PR 的成�
 - `ruler-android-debug-apk`：解压后安装 `app-debug.apk`（测试签名，不是上架包）。
 - `ruler-windows-test-zip`：解压下载文件，再解压其中 `ruler-windows-test.zip`；
   保留全部 DLL 和 data 文件夹，双击 `ruler_client.exe`。
+  CI 额外包含官方 Visual C++ x64 运行库，避免干净开发电脑缺少 CRT DLL。
 - 两个 coverage 文件包是自动检查证据，不是安装包。
 
 打开后应看到“欢迎使用 RULER”和阶段说明，点击“查看本次交付范围”，返回，再切换系统深色主题。
