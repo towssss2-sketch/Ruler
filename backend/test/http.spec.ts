@@ -47,7 +47,7 @@ describe('真实 HTTP 冒烟和错误路径', (): void => {
     expect(body).not.toContain('stack');
   });
   it('未实现业务路由返回 404，不回显查询输入', async (): Promise<void> => {
-    const response = await fetch(`${baseUrl}/cases?private=fictional-sensitive-input`);
+    const response = await fetch(`${baseUrl}/not-implemented?private=fictional-sensitive-input`);
     expect(response.status).toBe(404);
     const body = await response.text();
     expect(body).toContain('接口不存在');

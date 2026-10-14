@@ -4,4 +4,5 @@ import { randomBytes } from 'node:crypto';
 process.env.NODE_ENV = 'test';
 process.env.AUTH_SIGNING_KEY ??= randomBytes(32).toString('hex');
 process.env.AUTH_CHALLENGE_KEY ??= randomBytes(32).toString('hex');
+process.env.FIELD_ENCRYPTION_KEY ??= randomBytes(32).toString('hex');
 process.env.REDIS_URL ??= 'redis://127.0.0.1:6379';
