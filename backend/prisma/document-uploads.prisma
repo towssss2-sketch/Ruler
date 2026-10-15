@@ -1,0 +1,31 @@
+// 上传票据只保存内部对象键，不保存签名 URL。过期任务用于重试清理孤立对象。
+model DocumentUpload {
+  id             String         @id @default(uuid()) @db.Uuid
+  caseId         String         @db.Uuid
+  ownerId        String         @db.Uuid
+  uploadedBy     String         @db.Uuid
+  documentId     String         @unique @db.Uuid
+  versionGroupId String         @db.Uuid
+  version        Int
+  fileName       String         @db.VarChar(255)
+  mimeType       String         @db.VarChar(128)
+  sizeBytes      BigInt
+  contentMd5     String         @db.VarChar(24)
+  pendingKey     String         @unique @db.Text
+  storageKey     String         @unique @db.Text
+  source         DocumentSource @default(MANUAL)
+  ingestionId    String?        @db.Uuid
+  expiresAt      DateTime       @db.Timestamptz(3)
+  completedAt    DateTime?      @db.Timestamptz(3)
+  cleanedAt      DateTime?      @db.Timestamptz(3)
+  createdAt      DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime       @updatedAt @db.Timestamptz(3)
+
+  case     Case @relation(fields: [caseId], references: [id], onDelete: Restrict)
+  owner    User @relation("UploadOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  uploader User @relation("UploadActor", fields: [uploadedBy], references: [id], onDelete: Restrict)
+
+  @@unique([caseId, versionGroupId, version])
+  @@index([ownerId, expiresAt])
+  @@index([cleanedAt, expiresAt])
+}

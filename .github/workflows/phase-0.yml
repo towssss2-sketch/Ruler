@@ -2,7 +2,7 @@ name: RULER 检查与测试包
 on:
   pull_request:
   push:
-    branches: [main, "feat/**", "fix/**"]
+    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read
@@ -73,6 +73,14 @@ jobs:
       - name: PostgreSQL、Redis、MinIO 功能检查
         working-directory: backend
         run: npm run test:integration
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ruler-document-validation
+          path: |
+            test-results/document-validation.json
+            test-results/document-acceptance.html
+          if-no-files-found: error
+          retention-days: 14
       - name: 空库、阶段0升级及数据库安全约束
         working-directory: backend
         run: npm run test:database
@@ -85,6 +93,7 @@ jobs:
         working-directory: backend
         shell: bash
         run: |
+          node --env-file=../.env ../scripts/prepare-storage-dev.mjs
           node --env-file=../.env dist/main.js &
           app_pid=$!
           trap 'kill "$app_pid" 2>/dev/null || true; wait "$app_pid" 2>/dev/null || true' EXIT

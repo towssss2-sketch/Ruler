@@ -4,7 +4,7 @@ import { client } from './fixtures';
 afterAll(async (): Promise<void> => { await client.$disconnect(); });
 
 describe('迁移后的实际数据库结构', (): void => {
-  it('18 个业务表及探针表均实际存在，列名与 Prisma 一致', async (): Promise<void> => {
+  it('全部业务、鉴权、上传票据及探针表均实际存在，列名与 Prisma 一致', async (): Promise<void> => {
     const rows = await client.$queryRaw<Array<{ table_name: string; column_name: string; udt_name: string }>>`
       SELECT table_name, column_name, udt_name FROM information_schema.columns
       WHERE table_schema = current_schema()

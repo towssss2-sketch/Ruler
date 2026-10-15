@@ -30,6 +30,8 @@ model User {
   auditLogs          AuditLog[]
   wallet             RTWallet?
   authSessions       AuthSession[]
+  ownedUploads       DocumentUpload[] @relation("UploadOwner")
+  performedUploads   DocumentUpload[] @relation("UploadActor")
 }
 
 model Case {
@@ -64,6 +66,7 @@ model Case {
   clientAccesses ClientAccess[]
   clientLogs     ClientAccessLog[]
   auditLogs      AuditLog[]
+  uploads        DocumentUpload[]
 
   // 活跃案件的 ownerId+caseNo+court 唯一由 SQL 部分唯一索引实现，保留软删除历史。
   @@index([ownerId, caseNo, court])

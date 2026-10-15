@@ -1,12 +1,12 @@
 # RULER
 
-律师案件管理系统的阶段 0 工程基座、阶段 1 数据模型、阶段 2 开发鉴权与阶段 3 案件管理。当前提供离线 Flutter 欢迎页、NestJS 健康检查、
+律师案件管理系统的阶段 0 工程基座、阶段 1 数据模型、阶段 2 开发鉴权、阶段 3 案件管理与阶段 4 文件存储。当前提供离线 Flutter 欢迎页、NestJS 健康检查、
 Prisma 开发迁移、PostgreSQL/Redis/MinIO 开发服务和实际 CI。
-邮箱验证码注册、登录、刷新、登出、资源权限验证和案件 CRUD/冲突检查接口已实现；客户端业务界面及文件、任务和计费业务仍按阶段推进。验证码仅投递给虚构测试邮箱的进程内适配器，不发送真实邮件。
+邮箱验证码注册、登录、刷新、登出、资源权限验证、案件 CRUD/冲突检查与文件接口已实现；客户端业务界面、协作、任务和计费业务仍按阶段推进。验证码仅投递给虚构测试邮箱的进程内适配器，不发送真实邮件。
 
 项目所有者无需阅读代码或运行命令：查看 PR 中文验收报告，下载 CI 测试包体验。
-当前验证状态见 [阶段 3 验收报告](docs/阶段3验收报告.md)，阶段 0 的安装体验见 [阶段 0 验收报告](docs/阶段0验收报告.md)。
-阶段 4 已拆分推进：[阶段 4A 存储基座](docs/阶段4A验收报告.md) 提供 MinIO/OSS 驱动与签名验证；案件文件接口、配额和版本属于后续 4B，尚未开放。
+当前验证状态见 [阶段 4B 验收报告](docs/阶段4B验收报告.md)，阶段 0 的安装体验见 [阶段 0 验收报告](docs/阶段0验收报告.md)。
+[阶段 4A 存储基座](docs/阶段4A验收报告.md) 提供 MinIO/OSS 驱动；阶段 4B 提供 OWNER 文件接口、上传票据、版本、配额及软删除。真实 OSS 与协作角色仍未开放。
 
 ## 下载与体验
 
@@ -19,6 +19,7 @@ GitHub → Actions → **RULER 检查与测试包** → 选择本 PR 的成功�
 - `ruler-auth-validation`：解压后双击 `auth-acceptance.html` 查看中文自动验收场景，不需要读代码。
 - `ruler-case-validation`：解压后双击 `case-acceptance.html` 查看案件专项中文验收结果。
 - `ruler-storage-validation`：解压后双击 `storage-acceptance.html`，区分真实 MinIO 与 OSS 离线测试。
+- `ruler-document-validation`：解压后双击 `document-acceptance.html`，查看文件上传、配额、版本与权限的中文验收结果。
 - coverage 文件包与 schema JSON 是自动检查证据，不是安装包。
 
 打开后应看到“欢迎使用 RULER”和阶段说明，点击“查看本次交付范围”，返回，再切换系统深色主题。
@@ -47,16 +48,17 @@ npm run prisma:validate
 npm run db:migrate
 npm run lint
 npm run typecheck
-npm run test:coverage  # 158 单测 + 37 HTTP e2e + 6 真实 MinIO；隔离 schema/Redis 前缀/临时桶
+npm run test:coverage  # 176 单测 + 58 HTTP e2e + 6 真实 MinIO；隔离 schema/Redis 前缀/临时桶
 npm run test:integration
 npm run test:database
 npm run build
+node --env-file=../.env ../scripts/prepare-storage-dev.mjs
 npm start
 ```
 
 `init-dev.mjs` 随机生成仅供开发的 .env，已有文件不覆盖、不打印凭据。
 `init-auth-dev.mjs` 补充缺失的两把鉴权密钥与独立 FIELD_ENCRYPTION_KEY；已有字段密钥不可覆盖或遗失，否则已有密文无法解密。
-`init-storage-dev.mjs` 仅补充开发存储参数。StorageModule 可按 STORAGE_DRIVER 选择 minio/oss，当前主应用未接入；真实 OSS 尚未联调，不能据此启用生产。
+`init-storage-dev.mjs` 仅补充开发存储参数。编译后 `prepare-storage-dev.mjs` 幂等创建或检查本机私有开发桶，不连接 OSS、不改既有策略或对象。StorageModule 已接入主应用；真实 OSS 尚未联调，不能据此启用生产。
 Compose 端口仅绑定 127.0.0.1。MinIO 使用固定官方发布包及 SHA-256 构建开发镜像，
 不依赖不可访问的 MinIO 镜像仓库。构建脚本当前只支持 Linux amd64，不用于生产。
 
@@ -68,6 +70,7 @@ GET /health 是进程存活检查；GET /health/ready 实际查询数据库，�
 邮箱方案避免短信权限与真实收费；验证码不在 HTTP、日志或公开取码接口返回。生产环境仍禁止启动。
 案件真实接口包括 POST/GET /cases、GET/PATCH/DELETE /cases/:caseId、POST /cases/:caseId/conflict-check。
 输入、当事人列表更新和删除保护见 [阶段3案件管理约定](docs/阶段3案件管理约定.md)。
+文件接口与重试、版本、容量和清理语义见 [阶段4B文件业务约定](docs/阶段4B文件业务约定.md)。
 
 另一个终端：
 
