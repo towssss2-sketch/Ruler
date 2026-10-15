@@ -4,9 +4,10 @@ import { HealthService } from './health.service';
 import { PrismaModule } from './prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ResourceAccessModule } from './modules/case/resource-access.module';
+import { DocumentModule } from './modules/document/document.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, ResourceAccessModule],
+  imports: [PrismaModule, AuthModule, ResourceAccessModule, DocumentModule],
   controllers: [HealthController],
   providers: [HealthService],
 })

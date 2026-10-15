@@ -16,5 +16,6 @@ import { configuredCipher } from '../../encryption-config';
 @Module({ imports: [PrismaModule], controllers: [ResourceAccessController, CaseController],
   providers: [CaseAccessGuard, CaseAccessService, CaseReadService, CaseWriteService, CaseDeleteService,
     CaseConflictService, CasePartiesService, CaseViewService,
-    { provide: EncryptionService, useFactory: (): EncryptionService => configuredCipher(process.env) }] })
+    { provide: EncryptionService, useFactory: (): EncryptionService => configuredCipher(process.env) }],
+  exports: [CaseAccessGuard, CaseAccessService] })
 export class ResourceAccessModule {}
