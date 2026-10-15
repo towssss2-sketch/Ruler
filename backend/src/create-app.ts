@@ -17,8 +17,8 @@ export async function createApp(): Promise<INestApplication> {
   const app = await NestFactory.create(AppModule, { logger: false });
   configureApp(app);
   const document = SwaggerModule.createDocument(app, new DocumentBuilder().setTitle('RULER 开发接口')
-    .setDescription('仅虚构数据；验证码无真实邮件投递；已实现鉴权、案件管理与文件存储接口。仅 OWNER；任务、协作及客户端业务界面尚未实现。')
-    .setVersion('0.4').addBearerAuth().build());
+    .setDescription('仅虚构数据；已实现鉴权、案件、文件及常规任务接口。仅 OWNER；法定期间计算与确认、协作及客户端业务界面尚未实现。')
+    .setVersion('0.5').addBearerAuth().build());
   SwaggerModule.setup('docs', app, document, { swaggerOptions: { persistAuthorization: false } });
   return app;
 }
