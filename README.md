@@ -5,7 +5,8 @@ Prisma 开发迁移、PostgreSQL/Redis/MinIO 开发服务和实际 CI。
 邮箱验证码注册、登录、刷新、登出、资源权限验证、案件 CRUD/冲突检查与文件接口已实现；客户端业务界面、协作、任务和计费业务仍按阶段推进。验证码仅投递给虚构测试邮箱的进程内适配器，不发送真实邮件。
 
 项目所有者无需阅读代码或运行命令：查看 PR 中文验收报告，下载 CI 测试包体验。
-当前验证状态见 [阶段 5A 验收报告](docs/阶段5A验收报告.md)，阶段 0 的安装体验见 [阶段 0 验收报告](docs/阶段0验收报告.md)。
+应用户要求提前提供 [11A1 客户端虚构体验](docs/阶段11A1验收报告.md)：案件创建/搜索、示例版本和任务完成/恢复可操作，数据仅在本次进程内存；真实登录、文件传输、云端保存与缓存尚未接入。
+后端状态见 [阶段 5A 验收报告](docs/阶段5A验收报告.md)。阶段 5B 仍待 D-05 法律决策，客户端准备独立推进。
 [阶段 4A 存储基座](docs/阶段4A验收报告.md) 提供 MinIO/OSS 驱动；阶段 4B 提供 OWNER 文件接口、上传票据、版本、配额及软删除。真实 OSS 与协作角色仍未开放。
 
 ## 下载与体验
@@ -21,10 +22,11 @@ GitHub → Actions → **RULER 检查与测试包** → 选择本 PR 的成功�
 - `ruler-storage-validation`：解压后双击 `storage-acceptance.html`，区分真实 MinIO 与 OSS 离线测试。
 - `ruler-document-validation`：解压后双击 `document-acceptance.html`，查看文件上传、配额、版本与权限的中文验收结果。
 - `ruler-task-validation`：解压后双击 `task-acceptance.html`，查看常规任务和今日汇总的中文验收结果；法定期间计算、确认和提醒仍待阶段 5B。
+- `ruler-client-experience`：解压后打开 `client-acceptance.html`，查看 16 项实际 Flutter 测试与真实 Widget 渲染截图。
 - coverage 文件包与 schema JSON 是自动检查证据，不是安装包。
 
-打开后应看到“欢迎使用 RULER”和阶段说明，点击“查看本次交付范围”，返回，再切换系统深色主题。
-本版离线运行，不上传资料；不包含登录或业务数据录入。
+打开后点击“开始虚构体验”→“新建案件”→保留默认虚构信息创建；在详情试用“示例文件”“工作任务”，返回列表可搜索。切换系统深色主题可检查布局。
+本版不连接真实账号或云端；示例文件只是条目演示，不读取设备文件或执行上传下载。关闭应用后体验数据清除，请勿输入真实资料。
 产物尚未生成、任务失败或跳过时，不能声称安装包可用。保留时间为 14 天。
 
 ## 开发者环境与命令
@@ -86,6 +88,8 @@ flutter run -d windows   # 仅 Windows 开发机
 flutter build windows --release --no-pub  # Windows 测试 ZIP 的编译模式，不代表正式发布
 flutter build apk --debug --no-pub        # Android 测试包，无正式签名
 ```
+
+Linux 中文测试截图使用系统 Noto CJK，可通过 RULER_TEST_CJK_FONT 指定字体路径。CI 显式准备中文测试字体，将 Flutter --machine 事件交给 scripts/render-client-report.mjs 生成真实报告；无需新增应用字体或第三方 SDK。
 
 停止开发服务：根目录 `docker compose down`，数据卷保留。
 只有丢弃全部虚构开发数据时才使用 `docker compose down --volumes`。

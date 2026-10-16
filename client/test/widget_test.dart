@@ -8,7 +8,7 @@ void main() {
     await tester.pumpWidget(const ProviderScope(child: RulerApp()));
     await tester.pumpAndSettle();
     expect(find.text('欢迎使用 RULER'), findsOneWidget);
-    expect(find.text('阶段 0 · 工程与 CI 基座'), findsOneWidget);
+    expect(find.text('阶段 11A1 · 客户端虚构体验'), findsOneWidget);
     expect(find.textContaining('请勿输入真实当事人'), findsOneWidget);
     expect(find.byType(TextField), findsNothing);
   });

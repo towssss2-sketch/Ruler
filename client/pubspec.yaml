@@ -1,7 +1,7 @@
 name: ruler_client
-description: RULER 阶段 0 基础工程测试版。
+description: RULER 离线虚构交互体验版，不连接真实账号或云端。
 publish_to: none
-version: 0.0.1+1
+version: 0.0.2+2
 environment:
   sdk: '>=3.10.7 <4.0.0'
   flutter: '>=3.38.7'
