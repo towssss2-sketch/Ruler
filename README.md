@@ -22,7 +22,7 @@ GitHub → Actions → **RULER 检查与测试包** → 选择本 PR 的成功�
 - `ruler-storage-validation`：解压后双击 `storage-acceptance.html`，区分真实 MinIO 与 OSS 离线测试。
 - `ruler-document-validation`：解压后双击 `document-acceptance.html`，查看文件上传、配额、版本与权限的中文验收结果。
 - `ruler-task-validation`：解压后双击 `task-acceptance.html`，查看常规任务和今日汇总的中文验收结果；法定期间计算、确认和提醒仍待阶段 5B。
-- `ruler-client-experience`：解压后打开 `client-acceptance.html`，查看 15 项实际 Flutter 测试与真实 Widget 渲染截图。
+- `ruler-client-experience`：解压后打开 `client-acceptance.html`，查看 16 项实际 Flutter 测试与真实 Widget 渲染截图。
 - coverage 文件包与 schema JSON 是自动检查证据，不是安装包。
 
 打开后点击“开始虚构体验”→“新建案件”→保留默认虚构信息创建；在详情试用“示例文件”“工作任务”，返回列表可搜索。切换系统深色主题可检查布局。

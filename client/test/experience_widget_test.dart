@@ -92,6 +92,23 @@ void main() {
   registerExperienceTest5();
   registerExperienceTest6();
   registerExperienceTest7();
+  registerExperienceTest8();
+}
+
+void registerExperienceTest8() {
+  testWidgets('系统返回依次经过详情、列表和欢迎页，返回体验仍保留本次数据', (tester) async {
+    await enter(tester);
+    await createCase(tester);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.text('我的体验案件'), findsOneWidget);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.text('欢迎使用 RULER'), findsOneWidget);
+    await tester.tap(find.text('开始虚构体验'));
+    await tester.pumpAndSettle();
+    expect(find.text('虚构合同纠纷'), findsOneWidget);
+  });
 }
 
 void registerExperienceTest1() {

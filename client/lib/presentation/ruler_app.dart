@@ -17,16 +17,26 @@ class RulerApp extends StatefulWidget {
 class _RulerAppState extends State<RulerApp> {
   late final GoRouter _router = GoRouter(
     routes: [
-      GoRoute(path: '/', builder: (context, state) => const WelcomePage()),
-      GoRoute(path: '/scope', builder: (context, state) => const ScopePage()),
       GoRoute(
-        path: '/experience',
-        builder: (context, state) => const ExperienceListPage(),
-      ),
-      GoRoute(
-        path: '/experience/:id',
-        builder: (context, state) =>
-            ExperienceDetailPage(caseId: state.pathParameters['id']!),
+        path: '/',
+        builder: (context, state) => const WelcomePage(),
+        routes: [
+          GoRoute(
+            path: 'scope',
+            builder: (context, state) => const ScopePage(),
+          ),
+          GoRoute(
+            path: 'experience',
+            builder: (context, state) => const ExperienceListPage(),
+            routes: [
+              GoRoute(
+                path: ':id',
+                builder: (context, state) =>
+                    ExperienceDetailPage(caseId: state.pathParameters['id']!),
+              ),
+            ],
+          ),
+        ],
       ),
     ],
   );
