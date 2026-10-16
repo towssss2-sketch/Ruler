@@ -41,6 +41,7 @@ try {
   run(process.execPath, [resolve(root, 'scripts/render-case-report.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/render-storage-report.mjs')]);
   run(process.execPath, [resolve(root, 'scripts/render-document-report.mjs')]);
+  run(process.execPath, [resolve(root, 'scripts/render-task-report.mjs')]);
 } finally {
   // Jest 测试负责清理本次专属 Redis 前缀；不清空 Redis 或任何现有 schema。
   if (created) ddl('SET client_min_messages TO WARNING; DROP SCHEMA :"owned_schema" CASCADE;\n');

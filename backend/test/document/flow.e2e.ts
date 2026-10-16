@@ -30,6 +30,11 @@ describe('文件业务真实 HTTP + MinIO 闭环', (): void => {
     expect(actual.status).toBe(200);
     expect(Buffer.from(await actual.arrayBuffer()).equals(content)).toBe(true);
     expect(actual.headers.get('content-disposition')).toContain('attachment');
+    const task = await request(`/cases/${caseId}/tasks`, { title: '核对虚构已上传材料', description: '虚构工作备注' }, access);
+    expect(task.status).toBe(201);
+    expect(task.data.caseId).toBe(caseId);
+    const tasks = await request(`/cases/${caseId}/tasks`, undefined, access);
+    expect(tasks.data.total).toBe(1);
     const logs = await repository.db.auditLog.findMany({ where: { caseId, resourceType: 'Document' } });
     expect(logs.map((entry): string => entry.action).sort())
       .toEqual(['DOCUMENT_DOWNLOAD_SIGNED', 'DOCUMENT_REGISTERED', 'DOCUMENT_UPLOAD_REQUESTED']);
