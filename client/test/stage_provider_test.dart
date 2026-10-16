@@ -6,6 +6,6 @@ void main() {
   test('Provider 明确标识客户端虚构体验，支持隔离读取', () {
     final container = ProviderContainer();
     addTearDown(container.dispose);
-    expect(container.read(stageProvider), '阶段 11A1 · 客户端虚构体验');
+    expect(container.read(stageProvider), '阶段 11A2 · 测试服务接入');
   });
 }

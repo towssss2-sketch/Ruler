@@ -1,13 +1,9 @@
 # RULER
 
-律师案件管理系统的阶段 0 工程基座、阶段 1 数据模型、阶段 2 开发鉴权、阶段 3 案件管理与阶段 4 文件存储。当前提供离线 Flutter 欢迎页、NestJS 健康检查、
-Prisma 开发迁移、PostgreSQL/Redis/MinIO 开发服务和实际 CI。
-邮箱验证码注册、登录、刷新、登出、资源权限验证、案件 CRUD/冲突检查与文件接口已实现；客户端业务界面、协作、任务和计费业务仍按阶段推进。验证码仅投递给虚构测试邮箱的进程内适配器，不发送真实邮件。
+律师案件管理系统，已实现工程/CI、数据模型、开发鉴权、案件、文件及常规任务后端。
+客户端已完成离线虚构演示，并接入真实登录、案件和常规任务接口；详见 [11A2A 验收报告](docs/阶段11A2A验收报告.md)。真实 Dart 到后端/数据库联调已验证保存、重登及账号隔离，但可达测试服务和账号尚未交付，默认安装包不能直接登录。
 
-项目所有者无需阅读代码或运行命令：查看 PR 中文验收报告，下载 CI 测试包体验。
-应用户要求提前提供 [11A1 客户端虚构体验](docs/阶段11A1验收报告.md)：案件创建/搜索、示例版本和任务完成/恢复可操作，数据仅在本次进程内存；真实登录、文件传输、云端保存与缓存尚未接入。
-后端状态见 [阶段 5A 验收报告](docs/阶段5A验收报告.md)。阶段 5B 仍待 D-05 法律决策，客户端准备独立推进。
-[阶段 4A 存储基座](docs/阶段4A验收报告.md) 提供 MinIO/OSS 驱动；阶段 4B 提供 OWNER 文件接口、上传票据、版本、配额及软删除。真实 OSS 与协作角色仍未开放。
+项目所有者无需阅读代码或运行命令。客户端设备文件选择/上传/下载和离线缓存尚待接入；后端状态见 [阶段 5A 验收报告](docs/阶段5A验收报告.md)。阶段 5B 仍待 D-05 法律决策，客户端独立推进。验证码仅投递虚构邮箱的进程内适配器，不发送真实邮件。真实 OSS、协作和计费未开放。
 
 ## 下载与体验
 
@@ -22,11 +18,12 @@ GitHub → Actions → **RULER 检查与测试包** → 选择本 PR 的成功�
 - `ruler-storage-validation`：解压后双击 `storage-acceptance.html`，区分真实 MinIO 与 OSS 离线测试。
 - `ruler-document-validation`：解压后双击 `document-acceptance.html`，查看文件上传、配额、版本与权限的中文验收结果。
 - `ruler-task-validation`：解压后双击 `task-acceptance.html`，查看常规任务和今日汇总的中文验收结果；法定期间计算、确认和提醒仍待阶段 5B。
-- `ruler-client-experience`：解压后打开 `client-acceptance.html`，查看 16 项实际 Flutter 测试与真实 Widget 渲染截图。
+- `ruler-client-experience`：解压后打开 `client-acceptance.html`，查看 37 项实际 Flutter 测试与真实 Widget 渲染截图（界面协议替身，不代表真机）。
+- `ruler-client-api-validation`：解压打开 `client-api-acceptance.html`，查看真实 Dart/Dio→Nest→PostgreSQL/Redis 的 6 个联调场景。
 - coverage 文件包与 schema JSON 是自动检查证据，不是安装包。
 
 打开后点击“开始虚构体验”→“新建案件”→保留默认虚构信息创建；在详情试用“示例文件”“工作任务”，返回列表可搜索。切换系统深色主题可检查布局。
-本版不连接真实账号或云端；示例文件只是条目演示，不读取设备文件或执行上传下载。关闭应用后体验数据清除，请勿输入真实资料。
+以上离线体验的示例文件只是条目演示，关闭应用后演示数据清除。新增“测试服务登录”入口已连接真实接口，但默认包未配置可达服务，显示尚未开放；无需为此反复下载。服务及虚构账号准备好后另提供直接点击的验收步骤。请勿输入真实资料。
 产物尚未生成、任务失败或跳过时，不能声称安装包可用。保留时间为 14 天。
 
 ## 开发者环境与命令
@@ -74,14 +71,14 @@ GET /health 是进程存活检查；GET /health/ready 实际查询数据库，�
 案件真实接口包括 POST/GET /cases、GET/PATCH/DELETE /cases/:caseId、POST /cases/:caseId/conflict-check。
 输入、当事人列表更新和删除保护见 [阶段3案件管理约定](docs/阶段3案件管理约定.md)。
 文件接口与重试、版本、容量和清理语义见 [阶段4B文件业务约定](docs/阶段4B文件业务约定.md)。
-任务接口为 POST/GET /cases/:caseId/tasks、PATCH/DELETE /tasks/:taskId 与 GET /tasks/today；仅 OWNER，日期按北京时间，任务描述加密落库，法定期间任务禁止删除且只能切换完成状态。尚无客户端任务入口。
+任务接口为 POST/GET /cases/:caseId/tasks、PATCH/DELETE /tasks/:taskId 与 GET /tasks/today；仅 OWNER，日期按北京时间，任务描述加密落库，法定期间任务禁止删除且只能切换完成状态。客户端已提供同案常规任务入口；今日汇总与期间功能尚未接入。
 
 另一个终端：
 
 ```bash
 cd client
 flutter pub get --enforce-lockfile
-dart format --output=none --set-exit-if-changed lib test
+dart format --output=none --set-exit-if-changed lib test tool
 flutter analyze --no-pub
 flutter test --no-pub --coverage --reporter expanded
 flutter run -d windows   # 仅 Windows 开发机
@@ -112,3 +109,5 @@ dl.google.com、maven.google.com、Gradle/Maven 与 Docker 官方分发域名。
 需求基线：[RULER-原始需求-v3.md](RULER-原始需求-v3.md)；
 [AGENTS.md](AGENTS.md) 与 [docs](docs/) 定义执行和验收流程。
 用户未验收前不自动合并；不进行生产部署。
+
+开发者真实客户端联调（先完成依赖安装及后端构建）：`node --env-file=.env scripts/test-client-api.mjs`，随后 `node scripts/render-client-api-report.mjs`。CI 将其作为必需检查；临时数据库与账号自动清理，不用于交付登录服务。
