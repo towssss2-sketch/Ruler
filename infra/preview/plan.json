@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "purpose": "FICTIONAL_TEST_ONLY",
+  "resources": { "provider": "aliyun", "proposedRegion": "cn-hongkong", "cpu": 2, "memoryGiB": 4, "diskGiB": 60 },
+  "budget": { "monthlyCapCny": 300, "domainFirstYearCapCny": 100, "autoRenew": false },
+  "endpoints": { "apiOrigin": "", "storageOrigin": "" },
+  "policy": { "realDataAllowed": false, "publicRegistration": false, "publicDataPorts": false, "publicConsole": false },
+  "lifecycle": { "testAccounts": 2, "trialDays": 7, "retentionDays": 7 }
+}

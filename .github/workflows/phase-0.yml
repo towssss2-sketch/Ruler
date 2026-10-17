@@ -48,6 +48,21 @@ jobs:
           npm run typecheck
           npm run test:coverage
           npm run build
+      - name: 测试环境方案校验与实际存储离线探针
+        run: |
+          mkdir -p test-results
+          node --test --test-reporter=tap scripts/preview-plan.test.mjs > test-results/preview-tests.tap
+          node scripts/render-preview-plan.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ruler-preview-plan
+          path: |
+            test-results/preview-plan.html
+            test-results/preview-plan.json
+            test-results/preview-tests.tap
+            docs/客户端测试环境方案.md
+          if-no-files-found: error
+          retention-days: 14
       - uses: actions/upload-artifact@v4
         with:
           name: ruler-auth-validation
