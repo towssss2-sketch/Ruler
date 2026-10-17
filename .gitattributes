@@ -1,0 +1,2 @@
+# PDF 交叉引用表的尾部空格有格式意义，按二进制保留字节。
+client/tool/fixtures/*.pdf binary

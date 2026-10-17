@@ -27,7 +27,10 @@ Future<void> prepareOnlineFont() async {
 }
 
 /// 截取实际连接版 Widget；数据来自协议替身，不作为真机联调证据。
-Future<void> captureOnline(WidgetTester tester) async {
+Future<void> captureOnline(
+  WidgetTester tester, {
+  String fileName = 'client-online-task.png',
+}) async {
   final boundary = tester.renderObject<RenderRepaintBoundary>(
     find.byKey(onlineCaptureKey),
   );
@@ -35,7 +38,7 @@ Future<void> captureOnline(WidgetTester tester) async {
     final frame = await boundary.toImage(pixelRatio: 1);
     try {
       final bytes = await frame.toByteData(format: ui.ImageByteFormat.png);
-      final file = File('../test-results/client-online-task.png');
+      final file = File('../test-results/$fileName');
       await file.parent.create(recursive: true);
       await file.writeAsBytes(bytes!.buffer.asUint8List());
     } finally {

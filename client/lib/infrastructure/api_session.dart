@@ -39,7 +39,21 @@ class ApiSession {
   String? _refresh;
   Future<void>? _refreshing;
   bool _closed = false;
+  final _closeListeners = <void Function()>{};
   bool get authenticated => !_closed && _access != null;
+
+  /// 文件直传与会话同生命周期；已关闭时立即取消新订阅者。
+  void onClose(void Function() listener) {
+    if (_closed) {
+      listener();
+    } else {
+      _closeListeners.add(listener);
+    }
+  }
+
+  /// 文件页面离开时解除监听，避免保存不再使用的传输对象。
+  void removeCloseListener(void Function() listener) =>
+      _closeListeners.remove(listener);
 
   /// 仅登录虚构邮箱；错误固定提示，不保留密码或响应原文。
   Future<void> login(String email, String password) async {
@@ -100,11 +114,16 @@ class ApiSession {
 
   /// 关闭后取消在途请求并清除凭据；晚到响应不能恢复旧会话。
   void close() {
+    if (_closed) return;
     _closed = true;
     _access = null;
     _refresh = null;
     _cancel.cancel();
     _dio.close(force: true);
+    for (final listener in _closeListeners.toList()) {
+      listener();
+    }
+    _closeListeners.clear();
   }
 
   Future<Response<Object?>> _send(
