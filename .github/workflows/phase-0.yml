@@ -106,6 +106,26 @@ jobs:
           app_pid=$!
           trap 'kill "$app_pid" 2>/dev/null || true; wait "$app_pid" 2>/dev/null || true' EXIT
           node --env-file=../.env ../scripts/http-smoke.mjs
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.38.7"
+          channel: stable
+          cache: true
+      - name: 真实 Dart 客户端连接 Nest 与隔离数据库
+        run: |
+          cd client
+          flutter pub get --enforce-lockfile
+          cd ..
+          node --env-file=.env scripts/test-client-api.mjs
+          node scripts/render-client-api-report.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ruler-client-api-validation
+          path: |
+            test-results/client-api-validation.json
+            test-results/client-api-acceptance.html
+          if-no-files-found: error
+          retention-days: 14
       - uses: actions/upload-artifact@v4
         with:
           name: ruler-backend-coverage
@@ -129,7 +149,7 @@ jobs:
         working-directory: client
         run: |
           flutter pub get --enforce-lockfile
-          dart format --output=none --set-exit-if-changed lib test
+          dart format --output=none --set-exit-if-changed lib test tool
           flutter analyze --no-pub
       - name: Widget 与 Provider 测试
         working-directory: client
@@ -150,6 +170,7 @@ jobs:
             test-results/client-acceptance.html
             test-results/client-validation.json
             test-results/client-experience-task.png
+            test-results/client-online-task.png
             test-results/client-validation-events.jsonl
           if-no-files-found: error
           retention-days: 14

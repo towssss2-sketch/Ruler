@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../application/stage_provider.dart';
 import 'experience_list_page.dart';
 import 'experience_detail_page.dart';
+import 'online_gateway.dart';
 
 /// 每个应用实例拥有自己的路由器，避免测试和窗口共享路由状态。
 class RulerApp extends StatefulWidget {
@@ -21,6 +22,10 @@ class _RulerAppState extends State<RulerApp> {
         path: '/',
         builder: (context, state) => const WelcomePage(),
         routes: [
+          GoRoute(
+            path: 'online',
+            builder: (context, state) => const OnlineGateway(),
+          ),
           GoRoute(
             path: 'scope',
             builder: (context, state) => const ScopePage(),
@@ -107,6 +112,11 @@ class WelcomePage extends ConsumerWidget {
                   ),
                   const SizedBox(height: 12),
                   OutlinedButton(
+                    onPressed: () => context.go('/online'),
+                    child: const Text('测试服务登录'),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton(
                     onPressed: () => context.push('/scope'),
                     child: const Text('查看本次交付范围'),
                   ),
@@ -133,8 +143,8 @@ class ScopePage extends StatelessWidget {
           child: Text(
             '本测试版提供虚构案件创建与搜索、示例文件版本、任务添加与完成/恢复，以及浅色/深色主题。'
             '\n\n本页面离线可用；不代表后端、数据库或业务功能已通过验收。'
-            '\n\n所有体验数据仅保存在本次运行内存。没有真实登录、注册、文件上传/下载或离线数据库缓存。'
-            '\n\n后续版本再接入已有后端和可达测试服务；法定期间计算与提醒仍待阶段 5B。',
+            '\n\n离线体验数据仅保存在本次运行内存。测试服务登录入口已接真实 API：登录、案件创建/搜索/删除及常规任务。'
+            '\n\n连接版需另提供可达测试服务及虚构账号，当前默认包未配置地址。注册、文件上传/下载、离线缓存和法定期间仍未交付。',
           ),
         ),
       ),
