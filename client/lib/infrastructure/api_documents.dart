@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import '../domain/documents.dart';
 import '../domain/online.dart';
 import 'api_session.dart';
@@ -87,8 +88,12 @@ class _Upload implements DocumentUpload {
   bool _uploaded = false;
   bool _busy = false;
   CaseDocument? _completed;
+  final _cancel = CancelToken();
   @override
   bool get bytesUploaded => _uploaded;
+
+  @override
+  void cancel() => _cancel.cancel();
 
   @override
   Future<CaseDocument> resume({void Function(int, int)? onProgress}) async {
@@ -96,15 +101,22 @@ class _Upload implements DocumentUpload {
       throw const ApiFailure('会话已结束，请重新登录。', sessionEnded: true);
     }
     if (_busy) throw const ApiFailure('上传正在处理，请稍候。');
+    if (_cancel.isCancelled) throw const ApiFailure('上传已取消，请刷新文件列表确认结果。');
     if (_completed != null) return _completed!;
     _busy = true;
     try {
       if (_ticket == null) await _prepare();
       if (!_uploaded) {
-        await repository.transfer.upload(_permit!, source, onProgress);
+        await repository.transfer.upload(
+          _permit!,
+          source,
+          onProgress,
+          cancelToken: _cancel,
+        );
         _uploaded = true;
         _permit = null; // 不再保留上传签名；登记失败仅重试原票据。
       }
+      if (_cancel.isCancelled) throw const ApiFailure('上传已取消，请刷新文件列表确认结果。');
       _completed = parseDocument(
         await repository.session.request(
           'POST',

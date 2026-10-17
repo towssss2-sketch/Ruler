@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/documents.dart';
+import '../domain/device_files.dart';
+import '../infrastructure/system_files.dart';
 import '../infrastructure/api_documents.dart';
 import '../infrastructure/api_repository.dart';
 import '../infrastructure/storage_transfer.dart';
@@ -24,4 +26,20 @@ final documentsProvider = Provider.autoDispose<DocumentRepository?>((ref) {
   );
   ref.onDispose(documents.close);
   return documents;
+});
+
+/// 系统文件工作随账号及页面销毁；取消晚到的选择和保存。
+final deviceFilesProvider = Provider.autoDispose<DeviceFiles>((ref) {
+  final repository = ref.watch(onlineProvider);
+  final files = SystemFiles();
+  if (repository is ApiRepository) {
+    repository.session.onClose(files.close);
+  }
+  ref.onDispose(() {
+    if (repository is ApiRepository) {
+      repository.session.removeCloseListener(files.close);
+    }
+    files.close();
+  });
+  return files;
 });

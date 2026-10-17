@@ -176,37 +176,44 @@ void retryTests() {
 }
 
 void cancellationTest() {
-  test('会话关闭取消在途存储上传，不能继续登记', () async {
-    final pending = Completer<ResponseBody>();
-    var registrations = 0;
-    final api = ApiSession(
-      'https://api.example.invalid',
-      dio: Dio()
-        ..httpClientAdapter = TestAdapter((options) {
-          if (options.path == '/auth/login') return reply(tokens());
-          if (options.path.endsWith('/presign')) return reply(permit());
-          registrations++;
-          return reply(document());
-        }),
-    );
-    final repository = ApiDocuments(
-      api,
-      StorageTransfer({
-        'https://storage.example.invalid',
-      }, dio: Dio()..httpClientAdapter = TestAdapter((_) => pending.future)),
-    );
-    addTearDown(repository.close);
-    await api.login('fictional@example.invalid', 'fictional-password');
-    final operation = repository
-        .beginUpload('case-1', sample, 'EVIDENCE')
-        .resume();
-    final assertion = expectLater(operation, throwsA(isA<ApiFailure>()));
-    await Future<void>.delayed(const Duration(milliseconds: 20));
-    api.close();
-    pending.complete(ResponseBody.fromString('', 200));
-    await assertion;
-    expect(registrations, 0);
-  });
+  for (final closeSession in [true, false]) {
+    test('会话或单个操作取消在途上传 $closeSession，不能继续登记', () async {
+      final pending = Completer<ResponseBody>();
+      var registrations = 0;
+      final api = ApiSession(
+        'https://api.example.invalid',
+        dio: Dio()
+          ..httpClientAdapter = TestAdapter((options) {
+            if (options.path == '/auth/login') return reply(tokens());
+            if (options.path.endsWith('/presign')) return reply(permit());
+            registrations++;
+            return reply(document());
+          }),
+      );
+      final repository = ApiDocuments(
+        api,
+        StorageTransfer({
+          'https://storage.example.invalid',
+        }, dio: Dio()..httpClientAdapter = TestAdapter((_) => pending.future)),
+      );
+      addTearDown(repository.close);
+      await api.login('fictional@example.invalid', 'fictional-password');
+      final upload = repository.beginUpload('case-1', sample, 'EVIDENCE');
+      final operation = upload.resume();
+      final assertion = expectLater(operation, throwsA(isA<ApiFailure>()));
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      if (closeSession) {
+        api.close();
+      } else {
+        upload.cancel();
+      }
+      pending.complete(ResponseBody.fromString('', 200));
+      await assertion;
+      expect(registrations, 0);
+      await expectLater(upload.resume(), throwsA(isA<ApiFailure>()));
+      api.close();
+    });
+  }
 }
 
 void downloadTests() {

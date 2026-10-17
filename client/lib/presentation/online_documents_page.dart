@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../application/documents_provider.dart';
 import '../domain/documents.dart';
+import '../domain/device_files.dart';
 import '../domain/online.dart';
 import 'online_widgets.dart';
+import 'document_upload_dialog.dart';
 
 /// 服务端文件列表；分类和历史版本均来自真实接口。
 class OnlineDocumentsPage extends ConsumerWidget {
@@ -19,6 +21,7 @@ class OnlineDocumentsPage extends ConsumerWidget {
       key: ObjectKey(repository),
       caseId: caseId,
       repository: repository,
+      files: ref.watch(deviceFilesProvider),
     );
   }
 }
@@ -27,10 +30,12 @@ class DocumentList extends StatefulWidget {
   const DocumentList({
     required this.caseId,
     required this.repository,
+    this.files,
     super.key,
   });
   final String caseId;
   final DocumentRepository repository;
+  final DeviceFiles? files;
   @override
   State<DocumentList> createState() => _DocumentListState();
 }
@@ -65,6 +70,30 @@ class _DocumentListState extends State<DocumentList> {
     if (mounted) _load(1);
   }
 
+  Future<void> _upload([CaseDocument? previous]) async {
+    await showDialog<bool>(
+      context: context,
+      useRootNavigator: false,
+      barrierDismissible: false,
+      builder: (context) => DocumentUploadDialog(
+        caseId: widget.caseId,
+        repository: widget.repository,
+        files: widget.files!,
+        previous: previous,
+      ),
+    );
+    if (mounted) _load(1);
+  }
+
+  Future<void> _save(CaseDocument file) async {
+    final saved = await widget.files!.save(file, widget.repository);
+    if (mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(saved ? '文件已保存到所选位置。' : '已取消保存。')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
@@ -80,6 +109,7 @@ class _DocumentListState extends State<DocumentList> {
     body: SafeArea(
       child: Column(
         children: [
+          if (widget.files != null) OnlineAction(label: '上传文件', run: _upload),
           Padding(padding: const EdgeInsets.all(12), child: _filters()),
           Expanded(
             child: OnlineResult(future: _result, retry: _load, render: _list),
@@ -140,7 +170,17 @@ class _DocumentListState extends State<DocumentList> {
             '${documentCategories[file.category]} · v${file.version} · '
             '${file.current ? '当前版本' : '历史版本'} · ${file.size} 字节',
           ),
-          OnlineAction(label: '删除文件版本', run: () => _remove(file)),
+          Wrap(
+            spacing: 8,
+            children: [
+              if (widget.files != null) ...[
+                OnlineAction(label: '下载保存', run: () => _save(file)),
+                if (file.current)
+                  OnlineAction(label: '上传新版本', run: () => _upload(file)),
+              ],
+              OnlineAction(label: '删除文件版本', run: () => _remove(file)),
+            ],
+          ),
         ],
       ),
     ),

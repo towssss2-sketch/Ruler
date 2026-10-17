@@ -1,9 +1,9 @@
 # RULER
 
 律师案件管理系统，已实现工程/CI、数据模型、开发鉴权、案件、文件及常规任务后端。
-客户端已完成离线虚构演示，并接入真实登录、案件和常规任务接口；新增案件文件列表、分类、历史版本和删除，真实文件上传/下载核心已通过 MinIO 联调；详见 [11A2B1 验收报告](docs/阶段11A2B1验收报告.md)。真实 Dart 到后端/数据库联调已验证保存、重登及账号隔离，但可达测试服务和账号尚未交付，默认安装包不能直接登录。
+客户端已完成离线虚构演示，并接入真实登录、案件和常规任务接口；新增系统文件选择、上传进度/重试、新版本和下载保存；真实传输已通过 MinIO 联调，系统窗口仍待真机验收，详见 [11A2B2 验收报告](docs/阶段11A2B2验收报告.md)。真实 Dart 到后端/数据库联调已验证保存、重登及账号隔离，但可达测试服务和账号尚未交付，默认安装包不能直接登录。
 
-项目所有者无需阅读代码或运行命令。客户端系统文件选择/保存仍等待 D-09 依赖确认，离线缓存尚待接入；后端状态见 [阶段 5A 验收报告](docs/阶段5A验收报告.md)。阶段 5B 仍待 D-05 法律决策，客户端独立推进。验证码仅投递虚构邮箱的进程内适配器，不发送真实邮件。真实 OSS、协作和计费未开放。
+项目所有者无需阅读代码或运行命令。客户端系统文件选择/保存已接入，真机验证与离线缓存尚待完成；后端状态见 [阶段 5A 验收报告](docs/阶段5A验收报告.md)。阶段 5B 仍待 D-05 法律决策，客户端独立推进。验证码仅投递虚构邮箱的进程内适配器，不发送真实邮件。真实 OSS、协作和计费未开放。
 
 ## 下载与体验
 
@@ -18,7 +18,7 @@ GitHub → Actions → **RULER 检查与测试包** → 选择本 PR 的成功�
 - `ruler-storage-validation`：解压后双击 `storage-acceptance.html`，区分真实 MinIO 与 OSS 离线测试。
 - `ruler-document-validation`：解压后双击 `document-acceptance.html`，查看文件上传、配额、版本与权限的中文验收结果。
 - `ruler-task-validation`：解压后双击 `task-acceptance.html`，查看常规任务和今日汇总的中文验收结果；法定期间计算、确认和提醒仍待阶段 5B。
-- `ruler-client-experience`：解压后打开 `client-acceptance.html`，查看 57 项实际 Flutter 测试与真实 Widget 渲染截图（界面协议替身，不代表真机）。
+- `ruler-client-experience`：解压后打开 `client-acceptance.html`，查看 71 项实际 Flutter 测试与真实 Widget 渲染截图（界面协议替身，不代表真机）。
 - `ruler-client-api-validation`：解压打开 `client-api-acceptance.html`，查看真实 Dart/Dio→Nest→PostgreSQL/Redis/MinIO 的 9 个联调场景。
 - coverage 文件包与 schema JSON 是自动检查证据，不是安装包。
 
@@ -112,4 +112,4 @@ dl.google.com、maven.google.com、Gradle/Maven 与 Docker 官方分发域名。
 
 开发者真实客户端联调（先完成依赖安装及后端构建）：`node --env-file=.env scripts/test-client-api.mjs`，随后 `node scripts/render-client-api-report.mjs`。CI 将其作为必需检查；本次隔离数据库、账号、Redis 前缀和 MinIO 桶自动清理，不用于交付登录服务。
 
-文件直传源由构建参数 `RULER_STORAGE_ORIGINS` 指定（逗号分隔的源）；默认空值不允许对象请求。非本机只接受 HTTPS，不跟随重定向，不向对象存储发送登录凭据。文件选择与保存适配器待 D-09 批准后接入；无需项目所有者修改这些参数。
+文件直传源由构建参数 `RULER_STORAGE_ORIGINS` 指定（逗号分隔的源）；默认空值不允许对象请求。非本机只接受 HTTPS，不跟随重定向，不向对象存储发送登录凭据。文件选择与保存适配器已接入，D-09 两个组件按用户对确认问题的“继续”批准并锁定版本；无需项目所有者修改这些参数。
