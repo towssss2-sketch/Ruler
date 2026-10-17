@@ -172,6 +172,7 @@ jobs:
             test-results/client-experience-task.png
             test-results/client-online-task.png
             test-results/client-files.png
+            test-results/client-upload.png
             test-results/client-validation-events.jsonl
           if-no-files-found: error
           retention-days: 14
@@ -224,6 +225,9 @@ jobs:
         run: |
           flutter pub get --enforce-lockfile
           flutter build windows --release --no-pub
+      - name: Windows 文件快照、取消与覆盖保护测试
+        working-directory: client
+        run: flutter test --no-pub test/file_staging_test.dart --reporter expanded
       - name: 包含 Windows 所需的 Visual C++ 运行库
         working-directory: client
         shell: pwsh

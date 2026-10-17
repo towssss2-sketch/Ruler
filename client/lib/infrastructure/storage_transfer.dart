@@ -39,16 +39,17 @@ class StorageTransfer {
   }
   final Set<String> _origins;
   final Dio _dio;
-  final CancelToken _cancel = CancelToken();
   final Set<CancelToken> _downloads = {};
+  final Set<CancelToken> _uploads = {};
   bool _closed = false;
 
   /// PUT 绑定原尺寸、MIME 和 MD5；不做隐式重试，不发送 JWT 或 Cookie。
   Future<void> upload(
     TransferPermit permit,
     UploadSource source,
-    void Function(int, int)? progress,
-  ) async {
+    void Function(int, int)? progress, {
+    CancelToken? cancelToken,
+  }) async {
     _validate(permit);
     final expected = {
       'content-type': source.mimeType,
@@ -60,11 +61,13 @@ class StorageTransfer {
         expected.entries.any((e) => permit.headers[e.key] != e.value)) {
       throw const ApiFailure('上传凭证与所选文件不符。');
     }
+    final cancel = cancelToken ?? CancelToken();
+    _uploads.add(cancel);
     try {
       final response = await _dio.put<Object?>(
         permit.url,
         data: _bounded(source.open(), source.size),
-        cancelToken: _cancel,
+        cancelToken: cancel,
         options: Options(
           headers: permit.headers,
           responseType: ResponseType.plain,
@@ -74,6 +77,8 @@ class StorageTransfer {
       _success(response.statusCode);
     } catch (_) {
       throw const ApiFailure('文件传输未完成，请重试本次上传。');
+    } finally {
+      _uploads.remove(cancel);
     }
   }
 
@@ -119,7 +124,9 @@ class StorageTransfer {
   /// 会话关闭或页面销毁时取消传输，不继续使用尚有效的签名。
   void close() {
     _closed = true;
-    _cancel.cancel();
+    for (final cancel in _uploads) {
+      cancel.cancel();
+    }
     for (final cancel in _downloads) {
       cancel.cancel();
     }

@@ -72,4 +72,5 @@ abstract interface class DocumentRepository {
 abstract interface class DocumentUpload {
   bool get bytesUploaded;
   Future<CaseDocument> resume({void Function(int, int)? onProgress});
+  void cancel();
 }

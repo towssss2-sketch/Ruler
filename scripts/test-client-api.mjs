@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
-import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { clientStorageFixture } from './client-storage-fixture.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -56,9 +56,7 @@ async function dart(origin, emails, storageOrigin) {
   const result = await new Promise((resolveResult, reject) => {
     const child = spawn('dart', ['run', 'tool/connected_e2e.dart'], { cwd: resolve(root, 'client'),
       env: { ...process.env, RULER_E2E_URL: origin, RULER_E2E_ACCOUNTS: JSON.stringify(emails),
-        RULER_E2E_PASSWORD: password, RULER_E2E_STORAGE: storageOrigin,
-        RULER_E2E_FILE_MD5: createHash('md5').update(readFileSync(resolve(root,
-          'client/tool/fixtures/fictional.pdf'))).digest('base64') }, stdio: ['ignore', 'pipe', 'pipe'] });
+        RULER_E2E_PASSWORD: password, RULER_E2E_STORAGE: storageOrigin }, stdio: ['ignore', 'pipe', 'pipe'] });
     let stdout = '';
     child.stdout.on('data', chunk => { stdout += chunk; });
     child.stderr.resume(); // 不输出潜在包含请求凭据的原始异常。

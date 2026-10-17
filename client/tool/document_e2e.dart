@@ -4,6 +4,7 @@ import 'package:ruler_client/domain/documents.dart';
 import 'package:ruler_client/infrastructure/api_documents.dart';
 import 'package:ruler_client/infrastructure/api_session.dart';
 import 'package:ruler_client/infrastructure/storage_transfer.dart';
+import 'package:ruler_client/infrastructure/file_staging.dart';
 import 'connected_e2e.dart' show check, forbidden;
 
 /// 真实 MinIO PUT→登记→下载逐字节比较→版本与删除，全部虚构内容。
@@ -19,24 +20,21 @@ Future<List<String>> documentScenarios(
   final documents = ApiDocuments(session, StorageTransfer({storage}));
   final fixture = File('tool/fixtures/fictional.pdf');
   final bytes = await fixture.readAsBytes();
+  final snapshot = await StagedFile.create(Directory.systemTemp);
+  final digest = await snapshot.receive(
+    fixture.openRead(),
+    bytes.length,
+    () => true,
+  );
   final source = UploadSource(
     name: '虚构传输测试.pdf',
     mimeType: 'application/pdf',
     size: bytes.length,
-    md5: Platform.environment['RULER_E2E_FILE_MD5']!,
-    open: fixture.openRead,
+    md5: digest,
+    open: snapshot.file.openRead,
   );
   try {
-    final pending = documents.beginUpload(caseId, source, 'EVIDENCE');
-    final first = await pending.resume();
-    check((await pending.resume()).id == first.id);
-    final downloaded = <int>[];
-    await documents.download(first, (stream) async {
-      await for (final chunk in stream) {
-        downloaded.addAll(chunk);
-      }
-    });
-    check(base64Encode(downloaded) == base64Encode(bytes));
+    final first = await roundTrip(documents, caseId, source, bytes);
     check((await documents.list(caseId)).total == 1);
     await versions(documents, caseId, source, first);
     await reopen(origin, storage, ownEmail, password, caseId, first);
@@ -55,6 +53,7 @@ Future<List<String>> documentScenarios(
     ];
   } finally {
     documents.close();
+    await snapshot.dispose();
   }
 }
 
@@ -122,5 +121,29 @@ Future<void> documentIsolation(
   } finally {
     documents.close();
     session.close();
+  }
+}
+
+/// 使用实际快照和客户端摘要上传，再将完整下载写入实际临时文件。
+Future<CaseDocument> roundTrip(
+  ApiDocuments documents,
+  String caseId,
+  UploadSource source,
+  List<int> bytes,
+) async {
+  final pending = documents.beginUpload(caseId, source, 'EVIDENCE');
+  final first = await pending.resume();
+  check((await pending.resume()).id == first.id);
+  final downloaded = await StagedFile.create(Directory.systemTemp);
+  try {
+    await documents.download(first, (stream) async {
+      await downloaded.receive(stream, first.size, () => true);
+    });
+    check(
+      base64Encode(await downloaded.file.readAsBytes()) == base64Encode(bytes),
+    );
+    return first;
+  } finally {
+    await downloaded.dispose();
   }
 }

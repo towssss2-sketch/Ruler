@@ -15,17 +15,23 @@ const mimeExtensions = {
 
 /// 申请票据前验证长度、扩展名与协议摘要；MD5 不是安全扫描。
 void validateUpload(UploadSource source, String category) {
-  if (source.size < 1 ||
-      source.size > maxDocumentBytes ||
-      source.name.isEmpty ||
-      source.name.length > 512 ||
-      !source.name.contains('.') ||
-      RegExp(r'[/\\\x00-\x1f\x7f]').hasMatch(source.name) ||
-      mimeExtensions[source.name.split('.').last.toLowerCase()] !=
-          source.mimeType ||
-      !RegExp(r'^[A-Za-z0-9+/]{22}==$').hasMatch(source.md5) ||
+  validateFileMetadata(source.name, source.mimeType, source.size);
+  if (!RegExp(r'^[A-Za-z0-9+/]{22}==$').hasMatch(source.md5) ||
       !documentCategories.containsKey(category)) {
     throw const ApiFailure('请选择不超过 200 MiB 的非空 PDF、Word、图片或 MP4 文件，并选择分类。');
+  }
+}
+
+/// 在复制文件前校验元数据，不需要伪造尚未计算的摘要。
+void validateFileMetadata(String name, String mime, int size) {
+  if (size < 1 ||
+      size > maxDocumentBytes ||
+      name.isEmpty ||
+      name.length > 512 ||
+      !name.contains('.') ||
+      RegExp(r'[/\\\x00-\x1f\x7f]').hasMatch(name) ||
+      mimeExtensions[name.split('.').last.toLowerCase()] != mime) {
+    throw const ApiFailure('请选择不超过 200 MiB 的非空 PDF、Word、图片或 MP4 文件。');
   }
 }
 
