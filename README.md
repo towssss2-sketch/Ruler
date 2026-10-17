@@ -7,6 +7,8 @@
 
 ## 下载与体验
 
+目前没有服务器和域名，按用户要求先交付[客户端测试环境方案](docs/客户端测试环境方案.md)。资源、预算、开通顺序及工程缺项已列明；没有购买或部署，手机/Windows 公网体验仍受阻。
+
 GitHub → Actions → **RULER 检查与测试包** → 选择本 PR 的成功运行 → Artifacts：
 
 - `ruler-android-debug-apk`：解压后安装 `app-debug.apk`（测试签名，不是上架包）。
@@ -21,6 +23,7 @@ GitHub → Actions → **RULER 检查与测试包** → 选择本 PR 的成功�
 - `ruler-client-experience`：解压后打开 `client-acceptance.html`，查看 71 项实际 Flutter 测试与真实 Widget 渲染截图（界面协议替身，不代表真机）。
 - `ruler-client-api-validation`：解压打开 `client-api-acceptance.html`，查看真实 Dart/Dio→Nest→PostgreSQL/Redis/MinIO 的 9 个联调场景。
 - coverage 文件包与 schema JSON 是自动检查证据，不是安装包。
+- `ruler-preview-plan`：解压后打开 `preview-plan.html` 审阅测试环境建议和当前缺项；报告保持 BLOCKED，不代表服务已部署。原始测试记录和完整中文方案一并提供。
 
 打开后点击“开始虚构体验”→“新建案件”→保留默认虚构信息创建；在详情试用“示例文件”“工作任务”，返回列表可搜索。切换系统深色主题可检查布局。
 以上离线体验的示例文件只是条目演示，关闭应用后演示数据清除。新增“测试服务登录”入口已连接真实接口，但默认包未配置可达服务，显示尚未开放；无需为此反复下载。服务及虚构账号准备好后另提供直接点击的验收步骤。请勿输入真实资料。
@@ -95,6 +98,8 @@ Linux 中文测试截图使用系统 Noto CJK，可通过 RULER_TEST_CJK_FONT �
 迁移只向前追加，回退策略与尚未验证的生产恢复事项见阶段 1 验收报告。
 
 ## 云环境限制
+
+开发者可在后端构建后运行 `node --test --test-reporter=tap scripts/preview-plan.test.mjs` 与 `node scripts/render-preview-plan.mjs`，校验本轮固定测试提案并生成中文报告。只用已有依赖、虚构凭据及实际编译驱动做离线检查，不读取 .env，不查 DNS，不新建或连接云资源。修改规格时须同步审阅方案、检查器与报告，不能靠修改 JSON 获得部署授权。
 
 使用既有检出，不创建 worktree。SDK 和包缓存可放在 checkout 外。
 受限文件系统可使用 PUB_CACHE、XDG_CONFIG_HOME、
