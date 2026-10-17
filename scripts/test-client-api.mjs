@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
-import { randomBytes, randomUUID } from 'node:crypto';
+import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { clientStorageFixture } from './client-storage-fixture.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const backend = resolve(root, 'backend');
@@ -51,11 +52,13 @@ async function account(app, origin, Mailbox) {
 }
 
 /** 异步运行真实 Dart 网络层，保持 Nest 事件循环可响应请求。 */
-async function dart(origin, emails) {
+async function dart(origin, emails, storageOrigin) {
   const result = await new Promise((resolveResult, reject) => {
     const child = spawn('dart', ['run', 'tool/connected_e2e.dart'], { cwd: resolve(root, 'client'),
       env: { ...process.env, RULER_E2E_URL: origin, RULER_E2E_ACCOUNTS: JSON.stringify(emails),
-        RULER_E2E_PASSWORD: password }, stdio: ['ignore', 'pipe', 'pipe'] });
+        RULER_E2E_PASSWORD: password, RULER_E2E_STORAGE: storageOrigin,
+        RULER_E2E_FILE_MD5: createHash('md5').update(readFileSync(resolve(root,
+          'client/tool/fixtures/fictional.pdf'))).digest('base64') }, stdio: ['ignore', 'pipe', 'pipe'] });
     let stdout = '';
     child.stdout.on('data', chunk => { stdout += chunk; });
     child.stderr.resume(); // 不输出潜在包含请求凭据的原始异常。
@@ -65,38 +68,52 @@ async function dart(origin, emails) {
   });
   if (result.code !== 0) throw new Error('真实 Dart 客户端联调失败');
   const summary = JSON.parse(result.stdout);
-  assert.equal(summary.passed, 6);
+  assert.equal(summary.passed, 9);
   assert.equal(summary.failed, 0);
   writeFileSync(resolve(output, 'client-api-validation.json'), JSON.stringify(summary, null, 2));
-  console.log(`PASS 真实 Dart → Nest → PostgreSQL/Redis 联调：${summary.passed} 项`);
+  console.log(`PASS 真实 Dart → Nest → PostgreSQL/Redis/MinIO 联调：${summary.passed} 项`);
+}
+
+/** 每项资源独立清理；某项失败不跳过其他资源，也不回显凭据。 */
+async function cleanup(action) {
+  try { await action(); }
+  catch {
+    console.error('FAIL 本次隔离测试资源未完整清理，请检查开发环境。');
+    process.exitCode = 1;
+  }
 }
 
 let app;
+let storage;
 let created = false;
 try {
   ddl('CREATE SCHEMA :"owned_schema";\n');
   created = true;
   run(process.execPath, [resolve(backend, 'node_modules/prisma/build/index.js'), 'migrate', 'deploy']);
+  storage = await clientStorageFixture(id);
   const { createApp } = await import(pathToFileURL(resolve(backend, 'dist/create-app.js')));
   const { DevelopmentMailbox } = await import(pathToFileURL(resolve(backend, 'dist/modules/auth/development-mailbox.js')));
   app = await createApp();
   await app.listen(0, '127.0.0.1');
   const origin = await app.getUrl();
   const emails = [await account(app, origin, DevelopmentMailbox), await account(app, origin, DevelopmentMailbox)];
-  await dart(origin, emails);
+  await dart(origin, emails, storage.origin);
 } catch {
   console.error('FAIL 客户端真实联调未通过；未输出凭据或原始网络异常。');
   process.exitCode = 1;
 } finally {
-  if (app) await app.close();
-  const redis = new Redis(process.env.REDIS_URL);
-  try {
+  if (app) await cleanup(() => app.close());
+  if (storage) await cleanup(() => storage.close());
+  await cleanup(async () => {
+    const redis = new Redis(process.env.REDIS_URL);
+    try {
     let cursor = '0';
     do {
       const page = await redis.scan(cursor, 'MATCH', `${prefix}*`, 'COUNT', 100);
       cursor = page[0];
       if (page[1].length) await redis.del(...page[1]);
     } while (cursor !== '0');
-  } finally { await redis.quit(); }
-  if (created) ddl('SET client_min_messages TO WARNING; DROP SCHEMA :"owned_schema" CASCADE;\n');
+    } finally { await redis.quit(); }
+  });
+  if (created) await cleanup(() => ddl('SET client_min_messages TO WARNING; DROP SCHEMA :"owned_schema" CASCADE;\n'));
 }

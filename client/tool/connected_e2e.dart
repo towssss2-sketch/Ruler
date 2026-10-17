@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:ruler_client/domain/online.dart';
 import 'package:ruler_client/infrastructure/api_repository.dart';
 import 'package:ruler_client/infrastructure/api_session.dart';
+import 'document_e2e.dart';
 
 final _scenarios = <String>[];
 
@@ -33,6 +34,9 @@ Future<void> main() async {
     );
     _scenarios.add('真实登录、新建案件、当事人搜索和分页');
     await tasks(repository, item);
+    _scenarios.addAll(
+      await documentScenarios(first, item.id, emails[0], emails[1], password),
+    );
     await first.logout();
     await persistence(origin, emails[0], password, item);
     await second.login(emails[1], password);
@@ -45,7 +49,7 @@ Future<void> main() async {
         'failed': 0,
         'skipped': 0,
         'scenarios': _scenarios,
-        'transport': 'REAL_DART_DIO_NEST_POSTGRES_REDIS',
+        'transport': 'REAL_DART_DIO_NEST_POSTGRES_REDIS_MINIO',
         'device': 'NOT_RUN',
         'publicTestService': 'NOT_AVAILABLE',
       }),

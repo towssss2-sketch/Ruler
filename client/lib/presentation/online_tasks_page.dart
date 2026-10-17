@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../domain/online.dart';
 import 'online_form.dart';
 import 'online_widgets.dart';
+import 'online_documents_page.dart';
 
 /// 单案常规任务工作页，所有操作等待服务端确认，不显示模拟文件。
 class OnlineTasksPage extends StatefulWidget {
@@ -76,6 +77,15 @@ class _OnlineTasksPageState extends State<OnlineTasksPage> {
           Wrap(
             spacing: 12,
             children: [
+              OutlinedButton(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (context) =>
+                        OnlineDocumentsPage(caseId: widget.item.id),
+                  ),
+                ),
+                child: const Text('案件文件'),
+              ),
               OnlineAction(label: '新增工作任务', run: _add),
               OnlineAction(label: '删除测试案件', run: _deleteCase),
             ],
