@@ -167,6 +167,7 @@ jobs:
           dart format --output=none --set-exit-if-changed lib test tool
           flutter analyze --no-pub
       - name: Widget 与 Provider 测试
+        id: client-tests
         working-directory: client
         env:
           RULER_TEST_CJK_FONT: /usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc
@@ -176,8 +177,17 @@ jobs:
             sudo apt-get install -y fonts-noto-cjk
           fi
           mkdir -p ../test-results
-          flutter test --no-pub --coverage --machine > ../test-results/client-validation-events.jsonl
+          set -o pipefail
+          flutter test --no-pub --coverage --machine | tee ../test-results/client-validation-events.jsonl
           node ../scripts/render-client-report.mjs
+      - name: 保留 Flutter 原始测试事件（包含失败）
+        if: ${{ !cancelled() && steps.client-tests.outcome != 'skipped' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ruler-client-test-events
+          path: test-results/client-validation-events.jsonl
+          if-no-files-found: error
+          retention-days: 14
       - uses: actions/upload-artifact@v4
         with:
           name: ruler-client-experience
