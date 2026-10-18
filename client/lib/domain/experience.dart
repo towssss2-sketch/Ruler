@@ -11,9 +11,14 @@ class ExperienceTask {
 }
 
 class ExperienceFile {
-  const ExperienceFile({required this.id, required this.version});
+  const ExperienceFile({
+    required this.id,
+    required this.version,
+    this.category = 'EVIDENCE',
+  });
   final String id;
   final int version;
+  final String category;
   String get name => '虚构示例材料.pdf';
 }
 
@@ -55,7 +60,7 @@ abstract class ExperienceRepository {
   Future<void> remove(String caseId);
   Future<void> addTask(String caseId, String title);
   Future<void> toggleTask(String caseId, String taskId);
-  Future<void> addSample(String caseId);
+  Future<void> addSample(String caseId, {String category = 'EVIDENCE'});
   Future<void> removeFile(String caseId, String fileId);
 }
 

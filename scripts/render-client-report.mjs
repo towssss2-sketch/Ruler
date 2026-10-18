@@ -18,6 +18,9 @@ const fileScreenshot = readFileSync(target('client-files.png'));
 if (!fileScreenshot.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10]))) throw new Error('缺少文件页面实际渲染 PNG');
 const uploadScreenshot = readFileSync(target('client-upload.png'));
 if (!uploadScreenshot.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10]))) throw new Error('缺少上传界面实际渲染 PNG');
+for (const name of ['client-categories.png', 'client-category-demo.png']) {
+  if (!readFileSync(target(name)).subarray(0, 8).equals(Buffer.from([137,80,78,71,13,10,26,10]))) throw new Error('缺少分类界面实际渲染 PNG');
+}
 const summary = { total: tests.length, passed, failed, skipped, success: runnerPassed && failed === 0 && skipped === 0,
   mode: 'OFFLINE_DEMO_AND_API_UI', realApi: 'SEPARATE_CLIENT_API_REPORT', fileUpload: 'SYSTEM_ADAPTERS_IMPLEMENTED_REAL_DEVICE_NOT_RUN',
   persistence: 'SERVER_ONLY_NO_LOCAL_CACHE', publicTestService: 'NOT_AVAILABLE',
@@ -27,9 +30,9 @@ const rows = tests.map(test => `<tr><td>${escape(names.get(test.testID) ?? '未�
 writeFileSync(target('client-validation.json'), JSON.stringify(summary,null,2));
 writeFileSync(target('client-acceptance.html'), `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>RULER 客户端界面与会话检查</title><style>body{font:16px/1.6 system-ui;max-width:1000px;margin:2rem auto;padding:0 1rem}table{border-collapse:collapse;width:100%}td,th{padding:.5rem;border:1px solid #ccd4dc}img{max-width:100%;border:1px solid #ddd}</style>
-<h1>阶段11A2B2：设备文件选择、上传与保存检查</h1><p>实际 Flutter 测试：通过 ${passed}，失败 ${failed}，跳过 ${skipped}。${summary.success ? '自动检查通过；尚缺可达测试服务，不代表真机体验已完成。' : '未全部通过，不能验收。'}</p>
+<h1>文件分类、上传与客户端体验检查</h1><p>实际 Flutter 测试：通过 ${passed}，失败 ${failed}，跳过 ${skipped}。${summary.success ? '自动检查通过；尚缺可达测试服务，不代表真机体验已完成。' : '未全部通过，不能验收。'}</p>
 <p>测试服务登录、案件、常规任务和案件文件列表页面已实现。下表界面测试使用协议替身；实际 Dart/Dio 到 Nest、PostgreSQL、Redis、MinIO 的 9 项联调请查看 ruler-client-api-validation 产物。当前安装包没有预置服务地址和账号，登录入口明确提示尚未开放。</p>
-<h2>连接版实际界面渲染</h2><p>截图来自 Widget 测试，数据为虚构协议替身；真实后端联调独立验证，尚非真机截图。</p><img src="client-online-task.png" alt="连接版工作任务完成页面的实际 Widget 渲染">
+<h2>分类归档实际界面</h2><p>保留原九类，新增法院文件和服务合同；上传必须选分类，列表按当前页类别分组。自动识别分类未接入。以下截图为实际 Widget 渲染，在线页使用协议替身。</p><img src="client-categories.png" alt="文件分类分组"><img src="client-category-demo.png" alt="无需登录的分类演示"><h2>连接版实际界面渲染</h2><p>截图来自 Widget 测试，数据为虚构协议替身；真实后端联调独立验证，尚非真机截图。</p><img src="client-online-task.png" alt="连接版工作任务完成页面的实际 Widget 渲染">
 <h2>案件文件页面实际渲染</h2><p>分类、历史版本、分页和删除已经接入真实接口；截图使用虚构协议数据。已接入系统选择与本机保存适配器；操作系统窗口尚待真机验收。</p><img src="client-files.png" alt="案件文件分类与历史版本的实际 Widget 渲染">
 <h2>上传失败恢复的实际页面</h2><p>界面协议替身模拟登记失败，保留原文件和票据供重试，不代表真实系统选择器截图。</p><img src="client-upload.png" alt="文件选择后登记失败与重试入口的实际 Widget 渲染">
 <h2>安装后这样体验</h2><ol><li>点击“开始虚构体验”，查看空案件列表。</li><li>点击“新建案件”，保留默认虚构信息并创建。</li><li>进入“示例文件”，添加两次示例版本，查看版本标记与示例说明。</li><li>进入“工作任务”，添加任务、标记完成，再恢复待办。</li><li>返回列表搜索案件，进入详情后移除体验案件，确认回到空列表。</li></ol>

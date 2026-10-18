@@ -30,10 +30,9 @@ Future<void> prepareOnlineFont() async {
 Future<void> captureOnline(
   WidgetTester tester, {
   String fileName = 'client-online-task.png',
+  Key key = onlineCaptureKey,
 }) async {
-  final boundary = tester.renderObject<RenderRepaintBoundary>(
-    find.byKey(onlineCaptureKey),
-  );
+  final boundary = tester.renderObject<RenderRepaintBoundary>(find.byKey(key));
   await tester.runAsync(() async {
     final frame = await boundary.toImage(pixelRatio: 1);
     try {

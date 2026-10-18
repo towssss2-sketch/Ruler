@@ -11,12 +11,14 @@ class DocumentUploadDialog extends StatefulWidget {
     required this.repository,
     required this.files,
     this.previous,
+    this.initialCategory,
     super.key,
   });
   final String caseId;
   final DocumentRepository repository;
   final DeviceFiles files;
   final CaseDocument? previous;
+  final String? initialCategory;
   @override
   State<DocumentUploadDialog> createState() => _DocumentUploadDialogState();
 }
@@ -24,7 +26,7 @@ class DocumentUploadDialog extends StatefulWidget {
 class _DocumentUploadDialogState extends State<DocumentUploadDialog> {
   PreparedUpload? _prepared;
   DocumentUpload? _upload;
-  late String _category = widget.previous?.category ?? 'OTHER';
+  late String? _category = widget.previous?.category ?? widget.initialCategory;
   bool _busy = false;
   double? _progress;
   String? _error;
@@ -64,7 +66,7 @@ class _DocumentUploadDialogState extends State<DocumentUploadDialog> {
       _upload ??= widget.repository.beginUpload(
         widget.caseId,
         _prepared!.source,
-        _category,
+        _category!,
         previousId: widget.previous?.id,
       );
       await _upload!.resume(
@@ -119,7 +121,9 @@ class _DocumentUploadDialogState extends State<DocumentUploadDialog> {
     actions: [
       TextButton(onPressed: _dismiss, child: Text(_busy ? '停止并关闭' : '关闭')),
       FilledButton(
-        onPressed: _busy || _prepared == null ? null : _send,
+        onPressed: _busy || _prepared == null || _category == null
+            ? null
+            : _send,
         child: Text(
           _busy
               ? '处理中…'
@@ -147,7 +151,8 @@ class _DocumentUploadDialogState extends State<DocumentUploadDialog> {
         Text('${_prepared!.source.name} · ${_prepared!.source.size} 字节'),
       DropdownButtonFormField<String>(
         initialValue: _category,
-        decoration: const InputDecoration(labelText: '归档分类'),
+        decoration: const InputDecoration(labelText: '归档分类（必选）'),
+        hint: const Text('请选择材料分类'),
         isExpanded: true,
         items: documentCategories.entries
             .map(

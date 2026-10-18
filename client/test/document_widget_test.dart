@@ -83,7 +83,11 @@ void main() {
     expect(repository.page, 2);
     await tester.tap(find.byType(DropdownButtonFormField<String>));
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('其他').last);
+    await tester.scrollUntilVisible(
+      find.text('其他'),
+      120,
+      scrollable: find.byType(Scrollable).last,
+    );
     await tester.tap(find.text('其他').last);
     await tester.pumpAndSettle();
     expect(repository.category, 'OTHER');

@@ -1,4 +1,5 @@
 import '../domain/experience.dart';
+import '../domain/documents.dart';
 
 /// 只保存本进程的虚构体验数据；无网络、磁盘和真实验证码。
 class MemoryExperience implements ExperienceRepository {
@@ -75,14 +76,22 @@ class MemoryExperience implements ExperienceRepository {
   }
 
   @override
-  Future<void> addSample(String caseId) async {
+  Future<void> addSample(String caseId, {String category = 'EVIDENCE'}) async {
+    if (!documentCategories.containsKey(category)) {
+      throw const ExperienceFailure('请选择有效分类');
+    }
     final record = _record(caseId);
-    final version = (_versions[caseId] ?? 0) + 1;
-    _versions[caseId] = version;
+    final key = '$caseId:$category';
+    final version = (_versions[key] ?? 0) + 1;
+    _versions[key] = version;
     _cases[caseId] = record.copyWith(
       files: [
         ...record.files,
-        ExperienceFile(id: 'demo-${++_sequence}', version: version),
+        ExperienceFile(
+          id: 'demo-${++_sequence}',
+          version: version,
+          category: category,
+        ),
       ],
     );
   }

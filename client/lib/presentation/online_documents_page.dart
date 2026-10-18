@@ -80,6 +80,7 @@ class _DocumentListState extends State<DocumentList> {
         repository: widget.repository,
         files: widget.files!,
         previous: previous,
+        initialCategory: _category,
       ),
     );
     if (mounted) _load(1);
@@ -153,11 +154,29 @@ class _DocumentListState extends State<DocumentList> {
       Expanded(
         child: result.items.isEmpty
             ? const Center(child: Text('暂无符合条件的案件文件'))
-            : ListView(children: result.items.map(_file).toList()),
+            : ListView(children: _groups(result.items)),
       ),
       onlinePagination(result, _load),
     ],
   );
+
+  List<Widget> _groups(List<CaseDocument> files) => [
+    const Padding(
+      padding: EdgeInsets.all(12),
+      child: Text('按分类归档 · 以下数量仅统计当前页，更多文件请翻页'),
+    ),
+    for (final category in documentCategories.entries)
+      if (files.any((file) => file.category == category.key)) ...[
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+          child: Text(
+            '${category.value} · 本页 ${files.where((file) => file.category == category.key).length} 份',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+        ),
+        ...files.where((file) => file.category == category.key).map(_file),
+      ],
+  ];
 
   Widget _file(CaseDocument file) => Card(
     child: Padding(
