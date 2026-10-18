@@ -19,15 +19,16 @@ const summary = { passed, failed, notRun: tests.length-passed-failed, total: tes
 writeFileSync(fileURLToPath(new URL('../test-results/storage-validation.json', import.meta.url)), JSON.stringify(summary, null, 2));
 writeFileSync(fileURLToPath(new URL('../test-results/storage-acceptance.html', import.meta.url)), `<!doctype html>
 <html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>RULER 阶段4A存储基座验收</title><style>body{font:16px/1.6 system-ui;max-width:1050px;margin:2rem auto;padding:0 1rem;color:#172637}table{border-collapse:collapse;width:100%}td,th{padding:.5rem;border:1px solid #ccd4dc;text-align:left}th{background:#eaf1f8}</style>
-<h1>阶段4A：存储驱动与短效签名</h1><p>${summary.success ? '自动化检查通过，待用户验收' : '检查未全部通过，不能验收'}</p>
+<title>RULER 存储驱动与独立文件入口验收</title><style>body{font:16px/1.6 system-ui;max-width:1050px;margin:2rem auto;padding:0 1rem;color:#172637}table{border-collapse:collapse;width:100%}td,th{padding:.5rem;border:1px solid #ccd4dc;text-align:left}th{background:#eaf1f8}</style>
+<h1>存储驱动、短效签名与独立本机文件入口</h1><p>${summary.success ? '自动化检查通过，待用户验收' : '检查未全部通过，不能验收'}</p>
 <p>存储专项：成功 ${passed}，失败 ${failed}，未运行 ${summary.notRun}；其中真实 MinIO 场景 ${summary.realMinioPassed}/${realTests.length}。全套后端回归成功 ${report.numPassedTests}，失败 ${report.numFailedTests}，未运行 ${report.numPendingTests}。</p>
 <h2>已实际验证</h2><ol><li>虚构文件通过短效签名直接上传到本机私有 MinIO，并下载核对内容。</li>
 <li>中文文件名、文件大小和类型正确；复制保持内容一致；删除后不可读取。</li>
 <li>无签名、签名篡改、过期、长度或内容校验不符会被拒绝。</li>
-<li>连接、权限或桶故障明确失败，不伪装成“没有文件”。</li></ol>
+<li>连接、权限或桶故障明确失败，不伪装成“没有文件”。</li>
+<li>独立本机文件入口真实上传下载成功，后台元数据、复制和删除仍走内部地址；改写主机或替换端口会被真实 MinIO 拒绝。</li></ol>
 <h2>尚未交付的内容</h2><p>OSS 采用官方 SDK 的 V4 离线签名和适配器测试，没有连接真实阿里云，没有证明真实 OSS 读写可用。</p>
-<p>本报告只检查阶段4A的存储驱动。案件文件接口、文档登记、配额、版本、权限与上传票据的阶段4B结果见独立的 document-acceptance.html。安装包仍是欢迎页，没有文件上传按钮。签名是到期前有效的访问凭据，不能放入日志或截图。</p>
+<p>本报告检查存储驱动及独立本机入口。案件文件接口、文档登记、配额、版本、权限与上传票据结果见独立的 document-acceptance.html。客户端已有文件页面和系统选择适配器，但默认安装包没有可达服务，不能直接登录。独立入口是本机 HTTP 测试，并非公网 HTTPS 或真机验证。签名是到期前有效的访问凭据，不能放入日志或截图。</p>
 <p>MD5 用于存储协议的传输校验，不代表文件安全、身份认证或防碰撞证明；200 MiB 边界已验证入参和签名约束，未实际传输 200 MiB 大文件。</p>
 <p>你只需查看中文场景，有空再反馈“通过”或“不通过＋现象”。未自动合并，未生产部署。</p>
 <table><thead><tr><th>真实执行的场景（离线与实际 MinIO 已在标题区分）</th><th>结果</th></tr></thead><tbody>${rows}</tbody></table></html>`, { mode: 0o600 });

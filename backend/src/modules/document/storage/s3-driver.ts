@@ -9,10 +9,18 @@ import { SignedTransfer, StorageService, StoredObject, UploadRequest } from './s
 /** MinIO 开发驱动：所有 SDK 调用留在适配器中，不将供应商响应或异常返回业务层。 */
 export class S3Driver extends StorageService {
   private readonly client: S3Client;
+  private readonly signingClient: S3Client;
   constructor(private readonly config: MinioConfig, client?: S3Client) {
     super(); validateTtl(config.ttlSeconds);
-    this.client = client ?? new S3Client({ region: config.region, endpoint: config.endpoint, forcePathStyle: true,
-      credentials: { accessKeyId: config.accessKeyId, secretAccessKey: config.secretAccessKey },
+    this.client = client ?? this.createClient(config.endpoint);
+    this.signingClient = !config.signingEndpoint || config.signingEndpoint === config.endpoint
+      ? this.client : this.createClient(config.signingEndpoint);
+  }
+
+  /** 两个连接使用相同桶身份和签名约束；签名客户端只计算链接，不发对象管理请求。 */
+  private createClient(endpoint: string): S3Client {
+    return new S3Client({ region: this.config.region, endpoint, forcePathStyle: true,
+      credentials: { accessKeyId: this.config.accessKeyId, secretAccessKey: this.config.secretAccessKey },
       maxAttempts: 2, requestHandler: { connectionTimeout: 3000, requestTimeout: 10000 },
       requestChecksumCalculation: 'WHEN_REQUIRED', responseChecksumValidation: 'WHEN_REQUIRED' });
   }
@@ -21,7 +29,7 @@ export class S3Driver extends StorageService {
   async getUploadUrl(input: UploadRequest): Promise<SignedTransfer> {
     const headers = uploadHeaders(input);
     try {
-      const url = await getSignedUrl(this.client, new PutObjectCommand({ Bucket: this.config.bucket, Key: input.key,
+      const url = await getSignedUrl(this.signingClient, new PutObjectCommand({ Bucket: this.config.bucket, Key: input.key,
         ContentLength: input.sizeBytes, ContentType: input.mimeType, ContentMD5: input.contentMd5 }),
       { expiresIn: this.config.ttlSeconds, signableHeaders: new Set(Object.keys(headers)) });
       return { url, method: 'PUT', headers, expiresAt: this.expiresAt() };
@@ -32,7 +40,7 @@ export class S3Driver extends StorageService {
   async getDownloadUrl(key: string): Promise<SignedTransfer> {
     const disposition = downloadDisposition(key);
     try {
-      const url = await getSignedUrl(this.client, new GetObjectCommand({ Bucket: this.config.bucket, Key: key,
+      const url = await getSignedUrl(this.signingClient, new GetObjectCommand({ Bucket: this.config.bucket, Key: key,
         ResponseContentDisposition: disposition, ResponseCacheControl: 'private, no-store' }), { expiresIn: this.config.ttlSeconds });
       return { url, method: 'GET', headers: {}, expiresAt: this.expiresAt() };
     } catch { throw new StorageError('UNAVAILABLE'); }
@@ -72,6 +80,9 @@ export class S3Driver extends StorageService {
   }
 
   /** 释放 SDK 连接池；不会删除任何文件。 */
-  close(): void { this.client.destroy(); }
+  close(): void {
+    this.client.destroy();
+    if (this.signingClient !== this.client) this.signingClient.destroy();
+  }
   private expiresAt(): Date { return new Date(Date.now() + this.config.ttlSeconds * 1000); }
 }

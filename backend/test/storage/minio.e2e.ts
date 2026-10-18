@@ -2,8 +2,64 @@ import { setTimeout } from 'node:timers/promises';
 import { S3Driver } from '../../src/modules/document/storage/s3-driver';
 import { config, driver, installStorageFixture, storageFetch, trackedInput, upload } from './minio-fixture';
 import { fictionalContent } from './fixtures';
+import { loopbackProxy } from './loopback-proxy';
+import { loadStorageConfig } from '../../src/modules/document/storage/storage-config';
 
 installStorageFixture();
+
+describe('真实 MinIO 独立本机文件入口', (): void => {
+  let proxy: Awaited<ReturnType<typeof loopbackProxy>>;
+  let split: S3Driver;
+  beforeAll(async (): Promise<void> => {
+    proxy = await loopbackProxy(config.endpoint);
+    const loaded = loadStorageConfig({ ...process.env, NODE_ENV: 'test', STORAGE_DRIVER: 'minio',
+      STORAGE_BUCKET: config.bucket, MINIO_SIGNING_ENDPOINT: proxy.origin });
+    if (loaded.driver !== 'minio') throw new Error('仅允许本机测试');
+    split = new S3Driver(loaded);
+  });
+  afterAll(async (): Promise<void> => { split?.close(); if (proxy) await proxy.close(); });
+
+  it('独立入口实际上传下载一致，元数据、复制和删除只访问内部地址', async (): Promise<void> => {
+    const input = trackedInput();
+    const put = await split.getUploadUrl(input);
+    expect(new URL(put.url).origin).toBe(proxy.origin);
+    const uploaded = await storageFetch(put.url, { method: 'PUT', headers: put.headers, body: fictionalContent });
+    expect(uploaded.status).toBe(200); await uploaded.arrayBuffer();
+    const downloaded = await storageFetch((await split.getDownloadUrl(input.key)).url);
+    expect(downloaded.status).toBe(200);
+    expect(Buffer.from(await downloaded.arrayBuffer()).equals(fictionalContent)).toBe(true);
+    const before = [...proxy.methods];
+    const metadata = await split.stat(input.key);
+    const copy = trackedInput();
+    await split.copy(input.key, copy.key, metadata!.etag);
+    expect(await split.exists(copy.key)).toBe(true);
+    await split.delete(copy.key);
+    expect(await split.exists(copy.key)).toBe(false);
+    expect(proxy.methods).toEqual(before);
+    expect(before).toEqual(['PUT', 'GET']);
+  });
+  it('入口改写 Host 会被真实签名校验拒绝，失败上传不产生对象', async (): Promise<void> => {
+    const source = await upload();
+    const input = trackedInput();
+    const put = await split.getUploadUrl(input);
+    proxy.rewriteHost = true;
+    try {
+      const get = await storageFetch((await split.getDownloadUrl(source.key)).url);
+      expect(get.status).toBe(403); await get.arrayBuffer();
+      const rejected = await storageFetch(put.url, { method: 'PUT', headers: put.headers, body: fictionalContent });
+      expect(rejected.status).toBe(403); await rejected.arrayBuffer();
+      expect(await split.exists(input.key)).toBe(false);
+    } finally { proxy.rewriteHost = false; }
+  });
+  it('将已签名链接直接替换为内部端口同样被拒绝，不能靠字符串替换发布', async (): Promise<void> => {
+    const input = await upload();
+    const signed = new URL((await split.getDownloadUrl(input.key)).url);
+    const internal = new URL(config.endpoint);
+    signed.host = internal.host;
+    const rejected = await storageFetch(signed.toString());
+    expect(rejected.status).toBe(403); await rejected.arrayBuffer();
+  });
+});
 
 describe('真实 MinIO 签名读写（仅虚构文件）', (): void => {
   it('私有对象经短效 PUT 上传，再经 GET 下载；实际元数据、中文附件名和禁缓存一致', async (): Promise<void> => {

@@ -38,7 +38,9 @@ function writeReport(report) {
 <h2>当前还缺什么</h2><ul>${(report.issues ?? ['报告未完成']).map(text => `<li>${escape(text)}</li>`).join('')}</ul>
 <h2>实际代码检查</h2><p>当前后端拒绝非本机 MinIO 地址：${escape(report.storageProbe?.publicEndpointRejected ?? 'NOT_RUN')}；
 离线生成的文件链接指向本机：${escape(report.storageProbe?.signedOriginIsLoopback ?? 'NOT_RUN')}。
-探针执行实际编译代码，使用虚构签名凭据，不连接服务器。这两项说明当前代码仍需适配。</p>
+独立本机签名地址已分离：${escape(report.storageProbe?.independentLoopbackSigning ?? 'NOT_RUN')}；
+公共签名地址仍被拒绝：${escape(report.storageProbe?.publicSigningEndpointRejected ?? 'NOT_RUN')}。
+探针执行实际编译代码，使用虚构签名凭据，不连接服务器。独立本机入口不等于公网 HTTPS 已开放。</p>
 <p>地址格式：${escape(report.endpointFormat ?? 'NOT_RUN')}。格式合格不能证明域名归属、DNS、TLS 或服务可达。
 自动化测试数量请看同包 preview-tests.tap；此页状态不代替测试结果。</p>
 <h2>开通顺序与体验交付</h2><ol><li>审阅资源、地域、预算和虚构数据范围。</li>

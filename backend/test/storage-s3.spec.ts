@@ -2,6 +2,44 @@ import { CopyObjectCommand, HeadBucketCommand, HeadObjectCommand, S3Client } fro
 import { S3Driver } from '../src/modules/document/storage/s3-driver';
 import { minioConfig, uploadInput } from './storage/fixtures';
 
+describe('S3 独立签名入口与连接生命周期', (): void => {
+  it('独立签名入口绑定 PUT 和 GET 的主机端口，管理命令仍走原客户端', async (): Promise<void> => {
+    const config = minioConfig();
+    const client = new S3Client({ region: config.region });
+    const send = jest.spyOn(client, 'send').mockResolvedValue({ ContentLength: 20, ContentType: 'application/pdf', ETag: '"abcdef"' } as never);
+    const destroy = jest.spyOn(S3Client.prototype, 'destroy');
+    const driver = new S3Driver({ ...config, signingEndpoint: 'https://localhost:9443' }, client);
+    try {
+      const input = uploadInput();
+      const put = await driver.getUploadUrl(input);
+      const get = await driver.getDownloadUrl(input.key);
+      for (const result of [put, get]) {
+        const url = new URL(result.url);
+        expect(url.origin).toBe('https://localhost:9443');
+        expect(url.searchParams.get('X-Amz-SignedHeaders')?.split(';')).toContain('host');
+        expect(url.searchParams.get('X-Amz-Expires')).toBe('600');
+      }
+      expect(send).not.toHaveBeenCalled();
+      await driver.stat(input.key);
+      await driver.copy(input.key, uploadInput().key);
+      await driver.delete(input.key);
+      expect(send).toHaveBeenCalledTimes(3);
+    } finally {
+      driver.close();
+      const destroyed = destroy.mock.calls.length;
+      destroy.mockRestore();
+      expect(destroyed).toBe(2);
+    }
+  });
+  it('相同签名地址复用连接，关闭时不会重复释放', (): void => {
+    const config = minioConfig();
+    const client = new S3Client({ region: config.region });
+    const destroy = jest.spyOn(client, 'destroy');
+    new S3Driver({ ...config, signingEndpoint: config.endpoint }, client).close();
+    expect(destroy).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('S3 驱动离线签名与错误隔离', (): void => {
   it('签名包含长度、MIME、MD5，有效期不超过十分钟；下载强制附件及无缓存', async (): Promise<void> => {
     const config = minioConfig();

@@ -10,13 +10,20 @@ export async function probeCurrentStorage() {
     MINIO_ROOT_USER: 'fictional-offline-probe', MINIO_ROOT_PASSWORD: 'fictional-offline-probe-only',
     MINIO_ENDPOINT: 'http://127.0.0.1:9000' };
   let publicEndpointRejected = false;
+  let publicSigningEndpointRejected = false;
   try { loadStorageConfig({ ...fixture, MINIO_ENDPOINT: 'https://storage.example.invalid' }); }
   catch { publicEndpointRejected = true; }
+  try { loadStorageConfig({ ...fixture, MINIO_SIGNING_ENDPOINT: 'https://storage.example.invalid' }); }
+  catch { publicSigningEndpointRejected = true; }
   const driver = new S3Driver(loadStorageConfig(fixture));
+  const signingEndpoint = 'http://127.0.0.1:9443';
+  const split = new S3Driver(loadStorageConfig({ ...fixture, MINIO_SIGNING_ENDPOINT: signingEndpoint }));
   try {
     const id = '00000000-0000-4000-8000-000000000001';
     const transfer = await driver.getDownloadUrl(`${id}/${id}/${id}/1_fictional.pdf`);
-    return { mode: 'OFFLINE_REAL_CODE', publicEndpointRejected,
+    const separated = await split.getDownloadUrl(`${id}/${id}/${id}/1_fictional.pdf`);
+    return { mode: 'OFFLINE_REAL_CODE', publicEndpointRejected, publicSigningEndpointRejected,
+      independentLoopbackSigning: new URL(separated.url).origin === signingEndpoint,
       signedOriginIsLoopback: new URL(transfer.url).hostname === '127.0.0.1' };
-  } finally { driver.close(); }
+  } finally { driver.close(); split.close(); }
 }
