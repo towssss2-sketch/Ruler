@@ -1,3 +1,4 @@
+import '../domain/case_fields.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/experience.dart';
 import '../infrastructure/memory_experience.dart';
@@ -28,6 +29,12 @@ class ExperienceController extends AsyncNotifier<List<ExperienceCase>> {
     final id = await _repository.create(caseNo, cause, court);
     await _refresh();
     return id;
+  }
+
+  /// 编辑当前进程的虚构案件并刷新页面；不连接服务端或持久化到磁盘。
+  Future<void> editCase(String id, CaseFields fields) async {
+    await _repository.update(id, fields);
+    await _refresh();
   }
 
   Future<void> remove(String id) async {

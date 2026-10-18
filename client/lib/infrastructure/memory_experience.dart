@@ -1,3 +1,4 @@
+import '../domain/case_fields.dart';
 import '../domain/experience.dart';
 import '../domain/documents.dart';
 
@@ -33,6 +34,37 @@ class MemoryExperience implements ExperienceRepository {
 
   ExperienceCase _record(String id) =>
       _cases[id] ?? (throw const ExperienceFailure('体验案件已移除'));
+
+  /// 校验并修改虚构基础信息，原文件、任务和其他案件保持原状。
+  @override
+  Future<void> update(String caseId, CaseFields fields) async {
+    final record = _record(caseId);
+    if (validateCaseNumber(fields.caseNo) != null ||
+        [
+          fields.cause,
+          fields.court,
+        ].any((value) => value.trim().isEmpty || value.trim().length > 128) ||
+        !caseStages.containsKey(fields.stage) ||
+        !caseStatuses.containsKey(fields.status)) {
+      throw const ExperienceFailure('请核对案号、案由、法院、阶段和状态');
+    }
+    final normalized = CaseFields(
+      caseNo: normalizeCaseNumber(fields.caseNo),
+      cause: fields.cause.trim(),
+      court: fields.court.trim(),
+      stage: fields.stage,
+      status: fields.status,
+    );
+    if (_cases.values.any(
+      (item) =>
+          item.id != caseId &&
+          normalizeCaseNumber(item.caseNo) == normalized.caseNo &&
+          item.court == normalized.court,
+    )) {
+      throw const ExperienceFailure('体验案件的案号和法院重复');
+    }
+    _cases[caseId] = record.copyWith(fields: normalized);
+  }
 
   @override
   Future<void> remove(String caseId) async {

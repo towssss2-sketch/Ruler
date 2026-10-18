@@ -1,3 +1,4 @@
+import '../domain/case_fields.dart';
 import 'package:flutter/material.dart';
 import '../domain/online.dart';
 import 'online_form.dart';
@@ -121,7 +122,9 @@ class _OnlineCasesPageState extends State<OnlineCasesPage> {
                   final item = result.items[index];
                   return ListTile(
                     title: Text(item.caseNo),
-                    subtitle: Text('${item.cause} · ${item.court}'),
+                    subtitle: Text(
+                      '${item.cause} · ${item.court}\n${caseStages[item.stage]} · ${caseStatuses[item.status]}',
+                    ),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () => _open(item),
                   );

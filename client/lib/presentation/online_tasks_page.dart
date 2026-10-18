@@ -1,3 +1,5 @@
+import '../domain/case_fields.dart';
+import 'case_edit_dialog.dart';
 import 'package:flutter/material.dart';
 import '../domain/online.dart';
 import 'online_form.dart';
@@ -18,14 +20,15 @@ class OnlineTasksPage extends StatefulWidget {
 }
 
 class _OnlineTasksPageState extends State<OnlineTasksPage> {
+  late OnlineCase _item = widget.item;
   int _page = 1;
   late Future<OnlinePage<OnlineTask>> _result = widget.repository.tasks(
-    widget.item.id,
+    _item.id,
   );
 
   void _load([int? page]) => setState(() {
     _page = page ?? _page;
-    _result = widget.repository.tasks(widget.item.id, page: _page);
+    _result = widget.repository.tasks(_item.id, page: _page);
   });
 
   Future<void> _add() async {
@@ -34,15 +37,33 @@ class _OnlineTasksPageState extends State<OnlineTasksPage> {
       useRootNavigator: false,
       barrierDismissible: false,
       builder: (context) =>
-          OnlineForm(repository: widget.repository, caseId: widget.item.id),
+          OnlineForm(repository: widget.repository, caseId: _item.id),
     );
     if (saved == true && mounted) _load(1);
+  }
+
+  Future<void> _edit() async {
+    OnlineCase? updated;
+    final saved = await showDialog<bool>(
+      context: context,
+      useRootNavigator: false,
+      barrierDismissible: false,
+      builder: (_) => CaseEditDialog(
+        initial: _item.fields,
+        save: (fields) async {
+          updated = await widget.repository.updateCase(_item.id, fields);
+        },
+      ),
+    );
+    if (saved == true && mounted && updated != null) {
+      setState(() => _item = updated!);
+    }
   }
 
   Future<void> _deleteCase() async {
     if (!await confirmOnlineDelete(context, '删除此测试案件及其普通任务？服务端保留审计历史。')) return;
     if (!mounted) return;
-    await widget.repository.removeCase(widget.item.id);
+    await widget.repository.removeCase(_item.id);
     if (mounted) Navigator.pop(context);
   }
 
@@ -56,7 +77,7 @@ class _OnlineTasksPageState extends State<OnlineTasksPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: Text(widget.item.caseNo),
+      title: Text(_item.caseNo),
       actions: [
         IconButton(
           tooltip: '刷新任务',
@@ -71,7 +92,7 @@ class _OnlineTasksPageState extends State<OnlineTasksPage> {
           Padding(
             padding: const EdgeInsets.all(12),
             child: Text(
-              '${widget.item.cause} · ${widget.item.court}\n常规工作任务 · 工作日期不代表法定期间',
+              '${_item.cause} · ${_item.court}\n${caseStages[_item.stage]} · ${caseStatuses[_item.status]}\n常规工作任务 · 工作日期不代表法定期间',
             ),
           ),
           Wrap(
@@ -80,12 +101,12 @@ class _OnlineTasksPageState extends State<OnlineTasksPage> {
               OutlinedButton(
                 onPressed: () => Navigator.of(context).push(
                   MaterialPageRoute<void>(
-                    builder: (context) =>
-                        OnlineDocumentsPage(caseId: widget.item.id),
+                    builder: (context) => OnlineDocumentsPage(caseId: _item.id),
                   ),
                 ),
                 child: const Text('案件文件'),
               ),
+              OnlineAction(label: '编辑案件信息', run: _edit),
               OnlineAction(label: '新增工作任务', run: _add),
               OnlineAction(label: '删除测试案件', run: _deleteCase),
             ],

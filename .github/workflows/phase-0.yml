@@ -224,6 +224,8 @@ jobs:
             test-results/client-upload.png
             test-results/client-categories.png
             test-results/client-category-demo.png
+            test-results/client-case-edit.png
+            test-results/client-case-edit-demo.png
             test-results/client-validation-events.jsonl
           if-no-files-found: error
           retention-days: 14
