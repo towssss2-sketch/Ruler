@@ -1,3 +1,5 @@
+import '../domain/case_fields.dart';
+import 'case_edit_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -84,7 +86,24 @@ class ExperienceDetailPage extends ConsumerWidget {
             '${record.files.length} 个示例版本\n'
             '${record.tasks.where((task) => !task.done).length} 项待办',
           ),
+          Text('${caseStages[record.stage]} · ${caseStatuses[record.status]}'),
           const SizedBox(height: 24),
+          ExperienceAction(
+            label: '编辑案件信息',
+            onRun: () async {
+              await showDialog<bool>(
+                context: context,
+                barrierDismissible: false,
+                builder: (_) => CaseEditDialog(
+                  initial: record.fields,
+                  offline: true,
+                  save: (fields) => ref
+                      .read(experienceProvider.notifier)
+                      .editCase(record.id, fields),
+                ),
+              );
+            },
+          ),
           ExperienceAction(
             label: '移除体验案件',
             onRun: () async {

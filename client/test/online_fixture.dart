@@ -46,6 +46,13 @@ class OnlineFixture {
       item['status'] = input['status'];
       return reply(item);
     }
+    if (request.method == 'PATCH' && request.path.startsWith('/cases/')) {
+      final item = records.singleWhere(
+        (item) => item['id'] == request.path.split('/').last,
+      );
+      item.addAll(input);
+      return reply(item);
+    }
     if (request.method == 'DELETE') {
       records.removeWhere((item) => item['id'] == request.path.split('/').last);
       return reply({'deleted': true});
@@ -55,7 +62,12 @@ class OnlineFixture {
 
   ResponseBody _cases(RequestOptions request, Map<String, Object?> input) {
     if (request.method == 'POST') {
-      final item = {'id': 'case-${records.length}', ...input};
+      final item = {
+        'id': 'case-${records.length}',
+        'stage': 'FIRST_INSTANCE',
+        'status': 'ACTIVE',
+        ...input,
+      };
       records.add(item);
       return reply(item, 201);
     }
@@ -72,6 +84,8 @@ class OnlineFixture {
 
   void seed() => records.add({
     'id': 'case-1',
+    'stage': 'FIRST_INSTANCE',
+    'status': 'ACTIVE',
     'caseNo': '(2026)虚构民初1号',
     'cause': '虚构合同纠纷',
     'court': '虚构测试法院',

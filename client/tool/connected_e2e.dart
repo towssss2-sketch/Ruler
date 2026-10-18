@@ -1,3 +1,4 @@
+import 'case_edit_e2e.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:dio/dio.dart';
@@ -49,6 +50,8 @@ Future<void> runScenarios(bool verifiedTls) async {
     _scenarios.addAll(
       await documentScenarios(first, item.id, emails[0], emails[1], password),
     );
+    await editCaseScenario(repository, item.id);
+    _scenarios.add('真实修改案件基础信息和结案，保留当事人、文件统计与待办任务');
     await first.logout();
     await persistence(origin, emails[0], password, item);
     await second.login(emails[1], password);
@@ -103,6 +106,7 @@ Future<void> persistence(
     await session.login(email, password);
     final repository = ApiRepository(session);
     check((await repository.cases()).items.single.id == item.id);
+    await verifyEditedCase(repository, item.id);
     check((await repository.tasks(item.id)).items.single.title == '虚构持久化任务');
     _scenarios.add('销毁客户端后重新登录，案件和任务仍保留');
     await session.logout();
@@ -119,6 +123,9 @@ Future<void> isolation(ApiSession session, OnlineCase item) async {
     await repository.tasks(item.id);
   });
   await forbidden(() => repository.addTask(item.id, '虚构越权测试', null));
+  await forbidden(() async {
+    await repository.updateCase(item.id, editedCase);
+  });
   await forbidden(() => repository.removeCase(item.id));
   _scenarios.add('第二账号看不到且不能修改他人的案件和任务');
 }

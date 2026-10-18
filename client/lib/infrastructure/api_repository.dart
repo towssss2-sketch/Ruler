@@ -1,3 +1,4 @@
+import '../domain/case_fields.dart';
 import '../domain/online.dart';
 import 'api_session.dart';
 
@@ -46,6 +47,18 @@ class ApiRepository implements OnlineRepository {
     ),
   );
 
+  /// 仅提交基础字段；保留后端未提交字段，权限与冲突仍由服务端裁决。
+  @override
+  Future<OnlineCase> updateCase(String id, CaseFields fields) async => _case(
+    jsonObject(
+      await session.request(
+        'PATCH',
+        '/cases/${Uri.encodeComponent(id)}',
+        data: fields.toJson(),
+      ),
+    ),
+  );
+
   @override
   Future<void> removeCase(String id) async {
     await session.request('DELETE', '/cases/${Uri.encodeComponent(id)}');
@@ -85,12 +98,21 @@ class ApiRepository implements OnlineRepository {
   }
 }
 
-OnlineCase _case(Map<String, Object?> value) => OnlineCase(
-  jsonText(value, 'id'),
-  jsonText(value, 'caseNo'),
-  jsonText(value, 'cause'),
-  jsonText(value, 'court'),
-);
+OnlineCase _case(Map<String, Object?> value) {
+  final stage = jsonText(value, 'stage');
+  final status = jsonText(value, 'status');
+  if (!caseStages.containsKey(stage) || !caseStatuses.containsKey(status)) {
+    throw const ApiFailure('服务响应格式异常。');
+  }
+  return OnlineCase(
+    jsonText(value, 'id'),
+    jsonText(value, 'caseNo'),
+    jsonText(value, 'cause'),
+    jsonText(value, 'court'),
+    stage: stage,
+    status: status,
+  );
+}
 
 OnlineTask _task(Map<String, Object?> value) {
   final status = value['status'];
