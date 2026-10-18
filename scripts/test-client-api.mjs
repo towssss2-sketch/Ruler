@@ -8,13 +8,15 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { clientStorageFixture } from './client-storage-fixture.mjs';
 import { testTlsFixture, tlsStorageFixture } from './test-tls-fixture.mjs';
 import { request as httpsRequest } from 'node:https';
+import { checkRestrictedEntries } from './restricted-local-check.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const backend = resolve(root, 'backend');
 const require = createRequire(resolve(backend, 'package.json'));
 const Redis = require('ioredis');
-const useTls = process.argv.includes('--https');
-const resultName = useTls ? 'client-https-validation.json' : 'client-api-validation.json';
+const restricted = process.argv.includes('--restricted');
+const useTls = restricted || process.argv.includes('--https');
+const resultName = restricted ? 'client-restricted-validation.json' : useTls ? 'client-https-validation.json' : 'client-api-validation.json';
 const database = new URL(process.env.DATABASE_URL);
 assert.ok(['development', 'test'].includes(process.env.NODE_ENV));
 assert.ok(['127.0.0.1', 'localhost'].includes(database.hostname));
@@ -56,11 +58,11 @@ async function account(app, origin, Mailbox) {
 }
 
 /** 注册准备也严格验证本次证书，不使用全局关闭校验或任何公开取码接口。 */
-async function tlsPost(url, data, ca) {
+async function tlsPost(url, data, ca, method = 'POST') {
   return new Promise((resolveReply, reject) => {
-    const body = JSON.stringify(data);
-    const req = httpsRequest(url, { method: 'POST', ca, agent: false,
-      headers: { 'content-type': 'application/json', 'content-length': Buffer.byteLength(body) } }, response => {
+    const body = data === undefined ? undefined : JSON.stringify(data);
+    const req = httpsRequest(url, { method, ca, agent: false,
+      headers: body ? { 'content-type': 'application/json', 'content-length': Buffer.byteLength(body) } : {} }, response => {
       response.resume();
       response.on('end', () => resolveReply({ status: response.statusCode }));
       response.on('error', () => reject(new Error('HTTPS 测试账号准备失败')));
@@ -91,13 +93,26 @@ async function dart(origin, emails, storageOrigin) {
   assert.equal(summary.failed, 0);
   assert.equal(summary.skipped, 0);
   assert.equal(summary.tls, useTls ? 'LOCAL_TRUSTED_CERTIFICATE' : 'HTTP_LOOPBACK');
+  summary.runtimeProfile = restricted ? 'restricted-local' : 'development';
+  if (restricted) {
+    assert.deepEqual(await restrictedEntries(origin), boundaryChecks);
+    summary.boundaryChecks = boundaryChecks;
+    summary.serviceRestarted = true;
+  }
   if (gateway) {
     assert.ok(gateway.state.put > 0 && gateway.state.get > 0);
     assert.equal(gateway.state.credentialHeaderObserved, false);
     summary.storageIngress = { separateHttps: true, jwtOrCookieObserved: false };
   }
   writeFileSync(resolve(output, resultName), JSON.stringify(summary, null, 2));
-  console.log(`PASS 真实 Dart ${useTls ? '双 HTTPS' : 'HTTP'} → Nest → PostgreSQL/Redis/MinIO 联调：${summary.passed} 项`);
+  console.log(`PASS 真实 Dart ${restricted ? '隔离模式双 HTTPS' : useTls ? '双 HTTPS' : 'HTTP'} → Nest → PostgreSQL/Redis/MinIO 联调：${summary.passed} 项`);
+  if (restricted) console.log(`PASS 隔离入口检查：${boundaryChecks.length} 项，业务联调前后均拒绝`);
+}
+
+/** 使用本次可信证书检查真实入口，保留 TLS 主机校验。 */
+function restrictedEntries(origin) {
+  return checkRestrictedEntries((path, method) => tlsPost(`${origin}${path}`,
+    method === 'POST' ? { email: 'fictional@example.invalid' } : undefined, tls.cert, method));
 }
 
 /** 每项资源独立清理；某项失败不跳过其他资源，也不回显凭据。 */
@@ -113,6 +128,7 @@ let app;
 let storage;
 let tls;
 let gateway;
+let boundaryChecks;
 let created = false;
 try {
   ddl('CREATE SCHEMA :"owned_schema";\n');
@@ -124,6 +140,7 @@ try {
   delete process.env.RULER_TLS_CERT_FILE;
   delete process.env.RULER_TLS_KEY_FILE;
   delete process.env.MINIO_SIGNING_ENDPOINT;
+  delete process.env.RULER_RUNTIME_PROFILE;
   if (useTls) {
     tls = testTlsFixture();
     gateway = await tlsStorageFixture(storage.origin, tls);
@@ -134,8 +151,17 @@ try {
   const { DevelopmentMailbox } = await import(pathToFileURL(resolve(backend, 'dist/modules/auth/development-mailbox.js')));
   app = await createApp();
   await app.listen(0, '127.0.0.1');
-  const origin = await app.getUrl();
+  let origin = await app.getUrl();
   const emails = [await account(app, origin, DevelopmentMailbox), await account(app, origin, DevelopmentMailbox)];
+  if (restricted) {
+    await app.close();
+    app = undefined;
+    process.env.RULER_RUNTIME_PROFILE = 'restricted-local';
+    app = await createApp();
+    await app.listen(0, '127.0.0.1');
+    origin = await app.getUrl();
+    boundaryChecks = await restrictedEntries(origin);
+  }
   await dart(origin, emails, gateway?.origin ?? storage.origin);
 } catch {
   console.error('FAIL 客户端真实联调未通过；未输出凭据或原始网络异常。');

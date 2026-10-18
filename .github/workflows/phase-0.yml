@@ -153,6 +153,18 @@ jobs:
             test-results/client-https-acceptance.html
           if-no-files-found: error
           retention-days: 14
+      - name: 隔离模式关闭开发入口与真实客户端回归
+        run: |
+          node --env-file=.env scripts/test-client-api.mjs --restricted
+          node scripts/render-client-https-report.mjs --restricted
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ruler-client-restricted-validation
+          path: |
+            test-results/client-restricted-validation.json
+            test-results/client-restricted-acceptance.html
+          if-no-files-found: error
+          retention-days: 14
       - uses: actions/upload-artifact@v4
         with:
           name: ruler-backend-coverage
