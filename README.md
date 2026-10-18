@@ -118,3 +118,5 @@ dl.google.com、maven.google.com、Gradle/Maven 与 Docker 官方分发域名。
 开发者真实客户端联调（先完成依赖安装及后端构建）：`node --env-file=.env scripts/test-client-api.mjs`，随后 `node scripts/render-client-api-report.mjs`。CI 将其作为必需检查；本次隔离数据库、账号、Redis 前缀和 MinIO 桶自动清理，不用于交付登录服务。
 
 文件直传源由构建参数 `RULER_STORAGE_ORIGINS` 指定（逗号分隔的源）；默认空值不允许对象请求。非本机只接受 HTTPS，不跟随重定向，不向对象存储发送登录凭据。文件选择与保存适配器已接入，D-09 两个组件按用户对确认问题的“继续”批准并锁定版本；无需项目所有者修改这些参数。
+
+存储开发配置增加可选 `MINIO_SIGNING_ENDPOINT`：未设置时沿用 `MINIO_ENDPOINT`，显式空值拒绝。内部对象查询/复制/删除使用后者，短效 PUT/GET 链接在前者直接签名；两个地址仍只允许本机 HTTP/HTTPS。真实 MinIO 已通过独立本机 HTTP 入口上传下载和 Host/端口篡改拒绝验证，详见 [11A2B3B1 验收报告](docs/阶段11A2B3B1验收报告.md)。这不是公共 HTTPS、可达手机服务或部署网关，所有者无需配置这些变量。

@@ -62,6 +62,7 @@ for (const [name, mutate] of [
 });
 test('实际后端拒绝公网 MinIO 配置，离线签名指向本机；返回值不含签名或密钥', async () => {
   const result = await probeCurrentStorage();
-  assert.deepEqual(result, { mode: 'OFFLINE_REAL_CODE', publicEndpointRejected: true, signedOriginIsLoopback: true });
+  assert.deepEqual(result, { mode: 'OFFLINE_REAL_CODE', publicEndpointRejected: true,
+    publicSigningEndpointRejected: true, independentLoopbackSigning: true, signedOriginIsLoopback: true });
   assert.doesNotMatch(JSON.stringify(result), /signature|credential|fictional-offline|https?:/i);
 });

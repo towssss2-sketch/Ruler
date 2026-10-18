@@ -18,6 +18,27 @@ function cloudEnvironment(): NodeJS.ProcessEnv {
     OSS_ACCESS_KEY_SECRET: c.accessKeySecret, OSS_SECURITY_TOKEN: c.securityToken };
 }
 
+describe('独立签名入口配置', (): void => {
+  it('未配置签名地址时沿用内部地址，显式独立本机地址会分别规范化', (): void => {
+    const environment = localEnvironment();
+    expect(loadStorageConfig(environment)).toMatchObject({ endpoint: environment.MINIO_ENDPOINT, signingEndpoint: environment.MINIO_ENDPOINT });
+    expect(loadStorageConfig({ ...environment, MINIO_SIGNING_ENDPOINT: 'https://localhost:9443/' }))
+      .toMatchObject({ endpoint: environment.MINIO_ENDPOINT, signingEndpoint: 'https://localhost:9443' });
+  });
+  it.each(['', 'https://storage.example.invalid', 'http://192.168.1.2:9000', 'ftp://localhost',
+    'http://localhost:9000/path', 'http://user:fictional@localhost:9000',
+    'http://localhost:9000?secret=fictional', 'http://localhost:9000#fragment'])(
+    '独立签名地址仍拒绝非本机、空值或附带信息 #%#', (endpoint: string): void => {
+      expect((): unknown => loadStorageConfig({ ...localEnvironment(), MINIO_SIGNING_ENDPOINT: endpoint })).toThrow();
+    });
+  it('独立签名地址不能绕过生产禁用；拒绝错误不带地址或凭据', (): void => {
+    expect((): unknown => loadStorageConfig({ ...localEnvironment(), NODE_ENV: 'production',
+      MINIO_SIGNING_ENDPOINT: 'https://localhost:9443' })).toThrow('开发存储配置无效');
+    expect((): unknown => loadStorageConfig({ ...localEnvironment(),
+      MINIO_SIGNING_ENDPOINT: 'https://fictional:secret@localhost' })).toThrow(/^存储端点格式无效$/);
+  });
+});
+
 describe('存储配置与驱动选择', (): void => {
   it('根据环境选择 MinIO 或原生 OSS，生命周期关闭只释放自身资源', (): void => {
     const minio = configuredStorage(localEnvironment());
