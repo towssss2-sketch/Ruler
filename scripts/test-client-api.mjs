@@ -6,11 +6,15 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { clientStorageFixture } from './client-storage-fixture.mjs';
+import { testTlsFixture, tlsStorageFixture } from './test-tls-fixture.mjs';
+import { request as httpsRequest } from 'node:https';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const backend = resolve(root, 'backend');
 const require = createRequire(resolve(backend, 'package.json'));
 const Redis = require('ioredis');
+const useTls = process.argv.includes('--https');
+const resultName = useTls ? 'client-https-validation.json' : 'client-api-validation.json';
 const database = new URL(process.env.DATABASE_URL);
 assert.ok(['development', 'test'].includes(process.env.NODE_ENV));
 assert.ok(['127.0.0.1', 'localhost'].includes(database.hostname));
@@ -42,7 +46,7 @@ function ddl(statement) {
 /** 验证码仅由同一进程读取，不增加取码接口、固定账号或注册后门。 */
 async function account(app, origin, Mailbox) {
   const email = `fictional-${randomUUID()}@example.invalid`;
-  const post = (path, data) => fetch(`${origin}${path}`, { method: 'POST',
+  const post = (path, data) => tls ? tlsPost(`${origin}${path}`, data, tls.cert) : fetch(`${origin}${path}`, { method: 'POST',
     headers: { 'content-type': 'application/json' }, body: JSON.stringify(data) });
   assert.equal((await post('/auth/verification-code', { email })).status, 200);
   const code = app.get(Mailbox).take(email);
@@ -51,12 +55,29 @@ async function account(app, origin, Mailbox) {
   return email;
 }
 
+/** 注册准备也严格验证本次证书，不使用全局关闭校验或任何公开取码接口。 */
+async function tlsPost(url, data, ca) {
+  return new Promise((resolveReply, reject) => {
+    const body = JSON.stringify(data);
+    const req = httpsRequest(url, { method: 'POST', ca, agent: false,
+      headers: { 'content-type': 'application/json', 'content-length': Buffer.byteLength(body) } }, response => {
+      response.resume();
+      response.on('end', () => resolveReply({ status: response.statusCode }));
+      response.on('error', () => reject(new Error('HTTPS 测试账号准备失败')));
+    });
+    req.setTimeout(10000, () => req.destroy());
+    req.on('error', () => reject(new Error('HTTPS 测试账号准备失败')));
+    req.end(body);
+  });
+}
+
 /** 异步运行真实 Dart 网络层，保持 Nest 事件循环可响应请求。 */
 async function dart(origin, emails, storageOrigin) {
   const result = await new Promise((resolveResult, reject) => {
     const child = spawn('dart', ['run', 'tool/connected_e2e.dart'], { cwd: resolve(root, 'client'),
       env: { ...process.env, RULER_E2E_URL: origin, RULER_E2E_ACCOUNTS: JSON.stringify(emails),
-        RULER_E2E_PASSWORD: password, RULER_E2E_STORAGE: storageOrigin }, stdio: ['ignore', 'pipe', 'pipe'] });
+        RULER_E2E_PASSWORD: password, RULER_E2E_STORAGE: storageOrigin,
+        ...(tls ? { RULER_E2E_CA_FILE: tls.certFile } : {}) }, stdio: ['ignore', 'pipe', 'pipe'] });
     let stdout = '';
     child.stdout.on('data', chunk => { stdout += chunk; });
     child.stderr.resume(); // 不输出潜在包含请求凭据的原始异常。
@@ -66,10 +87,17 @@ async function dart(origin, emails, storageOrigin) {
   });
   if (result.code !== 0) throw new Error('真实 Dart 客户端联调失败');
   const summary = JSON.parse(result.stdout);
-  assert.equal(summary.passed, 9);
+  assert.equal(summary.passed, useTls ? 10 : 9);
   assert.equal(summary.failed, 0);
-  writeFileSync(resolve(output, 'client-api-validation.json'), JSON.stringify(summary, null, 2));
-  console.log(`PASS 真实 Dart → Nest → PostgreSQL/Redis/MinIO 联调：${summary.passed} 项`);
+  assert.equal(summary.skipped, 0);
+  assert.equal(summary.tls, useTls ? 'LOCAL_TRUSTED_CERTIFICATE' : 'HTTP_LOOPBACK');
+  if (gateway) {
+    assert.ok(gateway.state.put > 0 && gateway.state.get > 0);
+    assert.equal(gateway.state.credentialHeaderObserved, false);
+    summary.storageIngress = { separateHttps: true, jwtOrCookieObserved: false };
+  }
+  writeFileSync(resolve(output, resultName), JSON.stringify(summary, null, 2));
+  console.log(`PASS 真实 Dart ${useTls ? '双 HTTPS' : 'HTTP'} → Nest → PostgreSQL/Redis/MinIO 联调：${summary.passed} 项`);
 }
 
 /** 每项资源独立清理；某项失败不跳过其他资源，也不回显凭据。 */
@@ -83,24 +111,39 @@ async function cleanup(action) {
 
 let app;
 let storage;
+let tls;
+let gateway;
 let created = false;
 try {
   ddl('CREATE SCHEMA :"owned_schema";\n');
   created = true;
   run(process.execPath, [resolve(backend, 'node_modules/prisma/build/index.js'), 'migrate', 'deploy']);
   storage = await clientStorageFixture(id);
+  // 本次子进程选择明确模式，绝不继承另一轮的证书或签名入口设置。
+  delete process.env.RULER_E2E_CA_FILE;
+  delete process.env.RULER_TLS_CERT_FILE;
+  delete process.env.RULER_TLS_KEY_FILE;
+  delete process.env.MINIO_SIGNING_ENDPOINT;
+  if (useTls) {
+    tls = testTlsFixture();
+    gateway = await tlsStorageFixture(storage.origin, tls);
+    Object.assign(process.env, { HOST: '127.0.0.1', RULER_TLS_CERT_FILE: tls.certFile,
+      RULER_TLS_KEY_FILE: tls.keyFile, MINIO_SIGNING_ENDPOINT: gateway.origin });
+  }
   const { createApp } = await import(pathToFileURL(resolve(backend, 'dist/create-app.js')));
   const { DevelopmentMailbox } = await import(pathToFileURL(resolve(backend, 'dist/modules/auth/development-mailbox.js')));
   app = await createApp();
   await app.listen(0, '127.0.0.1');
   const origin = await app.getUrl();
   const emails = [await account(app, origin, DevelopmentMailbox), await account(app, origin, DevelopmentMailbox)];
-  await dart(origin, emails, storage.origin);
+  await dart(origin, emails, gateway?.origin ?? storage.origin);
 } catch {
   console.error('FAIL 客户端真实联调未通过；未输出凭据或原始网络异常。');
   process.exitCode = 1;
 } finally {
   if (app) await cleanup(() => app.close());
+  if (gateway) await cleanup(() => gateway.close());
+  if (tls) await cleanup(() => tls.close());
   if (storage) await cleanup(() => storage.close());
   await cleanup(async () => {
     const redis = new Redis(process.env.REDIS_URL);
