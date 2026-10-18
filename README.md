@@ -22,6 +22,7 @@ GitHub → Actions → **RULER 检查与测试包** → 选择本 PR 的成功�
 - `ruler-task-validation`：解压后双击 `task-acceptance.html`，查看常规任务和今日汇总的中文验收结果；法定期间计算、确认和提醒仍待阶段 5B。
 - `ruler-client-experience`：解压后打开 `client-acceptance.html`，查看 71 项实际 Flutter 测试与真实 Widget 渲染截图（界面协议替身，不代表真机）。
 - `ruler-client-api-validation`：解压打开 `client-api-acceptance.html`，查看真实 Dart/Dio→Nest→PostgreSQL/Redis/MinIO 的 9 个联调场景。
+- `ruler-client-https-validation`：解压打开 `client-https-acceptance.html`，查看本机双 HTTPS 的 10 个真实客户端场景，包含两个入口的未受信任证书拒绝。临时证书仅用于本机测试，不代表公共服务或真机通过。
 - coverage 文件包与 schema JSON 是自动检查证据，不是安装包。
 - `ruler-preview-plan`：解压后打开 `preview-plan.html` 审阅测试环境建议和当前缺项；报告保持 BLOCKED，不代表服务已部署。原始测试记录和完整中文方案一并提供。
 
@@ -120,3 +121,7 @@ dl.google.com、maven.google.com、Gradle/Maven 与 Docker 官方分发域名。
 文件直传源由构建参数 `RULER_STORAGE_ORIGINS` 指定（逗号分隔的源）；默认空值不允许对象请求。非本机只接受 HTTPS，不跟随重定向，不向对象存储发送登录凭据。文件选择与保存适配器已接入，D-09 两个组件按用户对确认问题的“继续”批准并锁定版本；无需项目所有者修改这些参数。
 
 存储开发配置增加可选 `MINIO_SIGNING_ENDPOINT`：未设置时沿用 `MINIO_ENDPOINT`，显式空值拒绝。内部对象查询/复制/删除使用后者，短效 PUT/GET 链接在前者直接签名；两个地址仍只允许本机 HTTP/HTTPS。真实 MinIO 已通过独立本机 HTTP 入口上传下载和 Host/端口篡改拒绝验证，详见 [11A2B3B1 验收报告](docs/阶段11A2B3B1验收报告.md)。这不是公共 HTTPS、可达手机服务或部署网关，所有者无需配置这些变量。
+
+本机 HTTPS：可同时提供 `RULER_TLS_CERT_FILE`、`RULER_TLS_KEY_FILE` 的绝对文件路径（材料放在仓库外）；只接受开发/测试环境和本机 HOST，证书必须有效、匹配主机且与私钥配对，每份材料限 128 KiB。未设置两项时兼容 HTTP；设置不全、空值或无效材料立即拒绝启动。最低 TLS 1.2，材料启动时加载，尚无自动续期/热更新。所有者无需配置这些变量。
+
+开发者在原本机服务和后端构建就绪后，可执行 `node --env-file=.env scripts/test-client-api.mjs --https`，随后 `node scripts/render-client-https-report.mjs`。需要系统 OpenSSL（已在本机与 CI 验证）；脚本在临时目录生成一次性自签证书，只监听本机随机端口。默认 Dart 客户端先拒绝两个入口的未信任证书，再在工具的局部信任区运行相同应用网络层的九项业务场景。测试后关闭入口并清理证书、隔离账号、schema、Redis 前缀与桶。不会安装系统信任根或修改现有 .env。详见 [11A2B3B2 验收报告](docs/阶段11A2B3B2验收报告.md)。

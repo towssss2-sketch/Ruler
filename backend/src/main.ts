@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import { loadConfig } from './config';
 import { createApp } from './create-app';
 
-/** 启动仅面向开发的阶段 0 应用；配置错误时非零退出。 */
+/** 启动仅面向开发的应用；配置错误时非零退出，显式 HTTPS 配置失败不降级。 */
 async function bootstrap(): Promise<void> {
   const config = loadConfig(process.env);
   const app = await createApp();

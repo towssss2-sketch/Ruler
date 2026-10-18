@@ -5,11 +5,23 @@ import 'package:ruler_client/domain/online.dart';
 import 'package:ruler_client/infrastructure/api_repository.dart';
 import 'package:ruler_client/infrastructure/api_session.dart';
 import 'document_e2e.dart';
+import 'tls_fixture.dart';
 
 final _scenarios = <String>[];
 
 /// 子进程从内存环境读取临时虚构账号，输出仅含固定场景名。
 Future<void> main() async {
+  try {
+    await withFixtureTrust(runScenarios);
+  } catch (_) {
+    stderr.write('客户端联调准备失败（已隐藏配置及原始异常）');
+    exitCode = 1;
+  }
+}
+
+/// 在默认 HTTP 或局部可信 HTTPS 环境中执行相同应用网络层。
+Future<void> runScenarios(bool verifiedTls) async {
+  if (verifiedTls) _scenarios.add('API 和文件入口的未受信任证书均被默认客户端拒绝');
   final origin = Platform.environment['RULER_E2E_URL']!;
   final emails =
       (jsonDecode(Platform.environment['RULER_E2E_ACCOUNTS']!) as List)
@@ -50,6 +62,7 @@ Future<void> main() async {
         'skipped': 0,
         'scenarios': _scenarios,
         'transport': 'REAL_DART_DIO_NEST_POSTGRES_REDIS_MINIO',
+        'tls': verifiedTls ? 'LOCAL_TRUSTED_CERTIFICATE' : 'HTTP_LOOPBACK',
         'device': 'NOT_RUN',
         'publicTestService': 'NOT_AVAILABLE',
       }),
