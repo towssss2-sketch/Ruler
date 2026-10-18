@@ -41,11 +41,13 @@ void registerScenario2() {
     var refreshes = 0;
     var reads = 0;
     final gate = Completer<ResponseBody>();
+    final refreshStarted = Completer<void>();
     final dio = Dio()
       ..httpClientAdapter = TestAdapter((request) {
         if (request.path == '/auth/login') return reply(tokens());
         if (request.path == '/auth/refresh') {
           refreshes++;
+          if (!refreshStarted.isCompleted) refreshStarted.complete();
           return gate.future;
         }
         if (request.headers['Authorization'] == 'Bearer fictional-access-one') {
@@ -58,10 +60,12 @@ void registerScenario2() {
     addTearDown(session.close);
     await session.login('test@example.invalid', 'fictional-password');
     final requests = List.generate(6, (_) => session.request('GET', '/cases'));
-    await Future<void>.delayed(const Duration(milliseconds: 20));
+    // 等待真实调度事件，不能假定繁忙的 CI 会在固定毫秒内发出请求。
+    final completed = expectLater(Future.wait(requests), completes);
+    await refreshStarted.future.timeout(const Duration(seconds: 5));
     expect(refreshes, 1);
     gate.complete(reply(tokens('two')));
-    await Future.wait(requests);
+    await completed;
     expect(refreshes, 1);
     expect(reads, 6);
   });
