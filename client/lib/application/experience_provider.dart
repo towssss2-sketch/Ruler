@@ -45,8 +45,8 @@ class ExperienceController extends AsyncNotifier<List<ExperienceCase>> {
     await _refresh();
   }
 
-  Future<void> addSample(String id) async {
-    await _repository.addSample(id);
+  Future<void> addSample(String id, {String category = 'EVIDENCE'}) async {
+    await _repository.addSample(id, category: category);
     await _refresh();
   }
 

@@ -17,6 +17,12 @@ void main() {
     await tester.tap(find.text('选择设备文件'));
     await tester.pumpAndSettle();
     expect(find.text('虚构.pdf · 3 字节'), findsOneWidget);
+    if (find.text('请选择材料分类').evaluate().isNotEmpty) {
+      await tester.tap(find.byType(DropdownButtonFormField<String>).last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('起诉材料').last);
+      await tester.pumpAndSettle();
+    }
     await tester.tap(find.text('开始上传'));
     await tester.pumpAndSettle();
     expect(find.text('登记尚未确认。'), findsOneWidget);
@@ -76,6 +82,12 @@ void cancellationTests() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('选择设备文件'));
     await tester.pumpAndSettle();
+    if (find.text('请选择材料分类').evaluate().isNotEmpty) {
+      await tester.tap(find.byType(DropdownButtonFormField<String>).last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('起诉材料').last);
+      await tester.pumpAndSettle();
+    }
     await tester.tap(find.text('开始上传'));
     await tester.pump();
     await tester.tap(find.text('停止并关闭'));
@@ -95,6 +107,12 @@ void versionAndSaveTest() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('选择设备文件'));
     await tester.pumpAndSettle();
+    if (find.text('请选择材料分类').evaluate().isNotEmpty) {
+      await tester.tap(find.byType(DropdownButtonFormField<String>).last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('起诉材料').last);
+      await tester.pumpAndSettle();
+    }
     await tester.tap(find.text('开始上传'));
     await tester.pumpAndSettle();
     expect(repository.previous, 'v2');

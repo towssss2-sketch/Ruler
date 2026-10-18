@@ -46,9 +46,18 @@ Future<List<String>> documentScenarios(
       caseId,
       first,
     );
+    await additionalCategories(
+      documents,
+      caseId,
+      source,
+      origin,
+      storage,
+      ownEmail,
+      password,
+    );
     return [
       '真实 MinIO 上传、登记与下载逐字节一致',
-      '文件分类、历史版本、删除后恢复与新实例重登保留',
+      '法院文件/服务合同分类、历史版本、删除恢复与重登保留',
       '第二账号不能列表、下载或删除他人文件',
     ];
   } finally {
@@ -145,5 +154,43 @@ Future<CaseDocument> roundTrip(
     return first;
   } finally {
     await downloaded.dispose();
+  }
+}
+
+/// 两个新增类别通过真实上传、分类查询及新会话重读验证，最后仅软删除本次新增记录。
+Future<void> additionalCategories(
+  ApiDocuments documents,
+  String caseId,
+  UploadSource source,
+  String origin,
+  String storage,
+  String email,
+  String password,
+) async {
+  final created = <CaseDocument>[];
+  for (final category in ['COURT_DOCUMENT', 'SERVICE_CONTRACT']) {
+    final file = await documents.beginUpload(caseId, source, category).resume();
+    check(file.category == category);
+    check(
+      (await documents.list(caseId, category: category)).items.single.id ==
+          file.id,
+    );
+    created.add(file);
+  }
+  final fresh = ApiSession(origin);
+  final reopened = ApiDocuments(fresh, StorageTransfer({storage}));
+  try {
+    await fresh.login(email, password);
+    for (final file in created) {
+      final page = await reopened.list(caseId, category: file.category);
+      check(page.total == 1 && page.items.single.id == file.id);
+      check(page.items.single.category == file.category);
+      await reopened.download(file, (stream) => stream.drain<void>());
+      await reopened.remove(file.id);
+    }
+    await fresh.logout();
+  } finally {
+    reopened.close();
+    fresh.close();
   }
 }

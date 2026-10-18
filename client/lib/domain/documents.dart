@@ -10,6 +10,8 @@ const documentCategories = {
   'HEARING_RECORD': '庭审笔录',
   'REPRESENTATION': '代理意见',
   'JUDGMENT': '判决书',
+  'COURT_DOCUMENT': '法院文件',
+  'SERVICE_CONTRACT': '服务合同',
   'OTHER': '其他',
 };
 
