@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../domain/online.dart';
+import '../domain/case_detail.dart';
+import 'draft_party_button.dart';
 import 'online_widgets.dart';
 
 /// 案件或任务的真实保存表单；服务失败保留输入，不冒充保存成功。
@@ -20,6 +22,7 @@ class _OnlineFormState extends State<OnlineForm> {
     _fields.length,
     (_) => TextEditingController(),
   );
+  List<CaseParty>? _parties;
   bool _busy = false;
   String? _error;
   @override
@@ -31,7 +34,7 @@ class _OnlineFormState extends State<OnlineForm> {
   }
 
   Future<void> _save() async {
-    if (!_form.currentState!.validate()) return;
+    if (_busy || !_form.currentState!.validate()) return;
     setState(() {
       _busy = true;
       _error = null;
@@ -39,11 +42,11 @@ class _OnlineFormState extends State<OnlineForm> {
     try {
       final values = _values.map((value) => value.text.trim()).toList();
       if (widget.caseId == null) {
-        await widget.repository.createCase(
+        await widget.repository.createCaseWithParties(
           values[0],
           values[1],
           values[2],
-          values[3],
+          _parties ?? [CaseParty(name: values[3], role: 'PLAINTIFF')],
         );
       } else {
         await widget.repository.addTask(
@@ -75,6 +78,16 @@ class _OnlineFormState extends State<OnlineForm> {
     return value.isEmpty ? '请填写${_fields[index]}' : null;
   }
 
+  List<CaseParty> _currentParties() =>
+      _parties ?? [CaseParty(name: _values[3].text.trim(), role: 'PLAINTIFF')];
+
+  Widget _draftButton() => DraftPartyButton(
+    parties: _currentParties(),
+    current: _currentParties,
+    enabled: !_busy,
+    change: (values) => setState(() => _parties = values),
+  );
+
   @override
   Widget build(BuildContext context) => PopScope(
     canPop: !_busy,
@@ -88,15 +101,18 @@ class _OnlineFormState extends State<OnlineForm> {
             children: [
               const Text('仅填写虚构资料；工作日期不代表法定期限。'),
               for (var i = 0; i < _fields.length; i++)
-                TextFormField(
-                  controller: _values[i],
-                  enabled: !_busy,
-                  maxLength: widget.caseId == null
-                      ? (i == 0 ? 80 : 128)
-                      : (i == 0 ? 255 : 10),
-                  decoration: InputDecoration(labelText: _fields[i]),
-                  validator: (value) => _validate(value, i),
-                ),
+                if (i != 3 || _parties == null)
+                  TextFormField(
+                    controller: _values[i],
+                    onChanged: i == 3 ? (_) => setState(() {}) : null,
+                    enabled: !_busy,
+                    maxLength: widget.caseId == null
+                        ? (i == 0 ? 80 : 128)
+                        : (i == 0 ? 255 : 10),
+                    decoration: InputDecoration(labelText: _fields[i]),
+                    validator: (value) => _validate(value, i),
+                  ),
+              if (widget.caseId == null) _draftButton(),
               if (_error != null) Text(_error!),
             ],
           ),

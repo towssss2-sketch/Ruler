@@ -42,7 +42,8 @@ class _WorkspaceState extends State<_Workspace> {
   final _navigator = GlobalKey<NavigatorState>();
   @override
   Widget build(BuildContext context) => NavigatorPopHandler<Object?>(
-    onPopWithResult: (result) => _navigator.currentState!.pop(result),
+    // 尊重内层表单的 PopScope，保存期间系统返回不能绕过保护。
+    onPopWithResult: (result) => _navigator.currentState!.maybePop(result),
     child: Navigator(
       key: _navigator,
       onGenerateRoute: (_) => MaterialPageRoute<void>(

@@ -1,4 +1,6 @@
 import '../domain/case_detail.dart';
+import '../domain/case_conflict.dart';
+import 'case_conflict_wire.dart';
 import 'case_detail_wire.dart';
 import '../domain/case_fields.dart';
 import '../domain/online.dart';
@@ -32,22 +34,47 @@ class ApiRepository implements OnlineRepository {
     String cause,
     String court,
     String party,
-  ) async => _case(
-    jsonObject(
-      await session.request(
-        'POST',
-        '/cases',
-        data: {
-          'caseNo': number,
-          'cause': cause,
-          'court': court,
-          'parties': [
-            {'name': party, 'role': 'PLAINTIFF'},
-          ],
-        },
+  ) => createCaseWithParties(number, cause, court, [
+    CaseParty(name: party, role: 'PLAINTIFF'),
+  ]);
+
+  /// 一个请求原子创建案件及完整名单，不用后续 PATCH 补齐新建数据。
+  @override
+  Future<OnlineCase> createCaseWithParties(
+    String number,
+    String cause,
+    String court,
+    List<CaseParty> parties,
+  ) async {
+    final error = validateNewParties(parties);
+    if (error != null) throw ApiFailure(error);
+    return _case(
+      jsonObject(
+        await session.request(
+          'POST',
+          '/cases',
+          data: {
+            'caseNo': number,
+            'cause': cause,
+            'court': court,
+            'parties': parties.map((party) => party.toJson()).toList(),
+          },
+        ),
       ),
-    ),
-  );
+    );
+  }
+
+  /// 服务端检查已保存名单；不接受客户端设置用户范围或匹配阈值。
+  @override
+  Future<OnlinePage<CaseConflict>> conflicts(String id, {int page = 1}) async =>
+      readConflictPage(
+        await session.request(
+          'POST',
+          '/cases/${Uri.encodeComponent(id)}/conflict-check',
+          query: {'page': page, 'pageSize': 20},
+        ),
+        expectedPage: page,
+      );
 
   /// 仅提交基础字段；保留后端未提交字段，权限与冲突仍由服务端裁决。
   @override

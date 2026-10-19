@@ -10,11 +10,13 @@ class PartyEditor extends StatefulWidget {
     required this.parties,
     required this.save,
     this.offline = false,
+    this.draft = false,
     super.key,
   });
   final List<CaseParty> parties;
   final Future<void> Function(List<CaseParty>) save;
   final bool offline;
+  final bool draft;
   @override
   State<PartyEditor> createState() => _PartyEditorState();
 }
@@ -43,7 +45,11 @@ class _PartyEditorState extends State<PartyEditor> {
       useRootNavigator: false,
       builder: (context) => AlertDialog(
         title: const Text('从本次编辑中移除此人？'),
-        content: const Text('保存后才会从案件中移除。取消整个编辑可保留原记录。'),
+        content: Text(
+          widget.draft
+              ? '仅修改本次新建名单，创建案件前不会写入。取消编辑可保留原草稿。'
+              : '保存后才会从案件中移除。取消整个编辑可保留原记录。',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -108,7 +114,9 @@ class _PartyEditorState extends State<PartyEditor> {
             Padding(
               padding: const EdgeInsets.all(12),
               child: Text(
-                widget.offline
+                widget.draft
+                    ? '仅填写虚构资料。完成名单后仍需返回新建表单创建案件；取消不改动原草稿。'
+                    : widget.offline
                     ? '仅虚构体验，关闭应用后清除。至少保留一人。'
                     : '仅填写虚构资料。至少保留一人；保存整份名单，取消不写入。',
               ),
@@ -158,6 +166,8 @@ class _PartyEditorState extends State<PartyEditor> {
         child: Text(
           _busy
               ? '保存中…'
+              : widget.draft
+              ? '完成名单'
               : widget.offline
               ? '保存体验当事人'
               : '保存当事人',

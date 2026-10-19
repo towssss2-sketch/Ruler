@@ -1,4 +1,5 @@
 import 'party_e2e.dart';
+import 'case_conflict_e2e.dart';
 import 'case_edit_e2e.dart';
 import 'dart:convert';
 import 'dart:io';
@@ -55,6 +56,8 @@ Future<void> runScenarios(bool verifiedTls) async {
     _scenarios.add('真实修改案件基础信息和结案，保留当事人、文件统计与待办任务');
     await partyScenario(repository, item.id);
     _scenarios.add('真实当事人新增、修改、移除、可选资料清空和外案身份拒绝');
+    await conflictScenario(repository);
+    _scenarios.add('真实多人建案与历史相似姓名检查、删除记录、分页和候选去重');
     await first.logout();
     await persistence(origin, emails[0], password, item);
     await second.login(emails[1], password);
@@ -129,6 +132,7 @@ Future<void> isolation(ApiSession session, OnlineCase item) async {
   final repository = ApiRepository(session);
   check((await repository.cases()).total == 0);
   await partyIsolation(repository, item.id);
+  await conflictIsolation(repository, item.id);
   await forbidden(() async {
     await repository.tasks(item.id);
   });

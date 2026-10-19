@@ -14,7 +14,12 @@ class MemoryExperience implements ExperienceRepository {
       List.unmodifiable(_cases.values.toList().reversed);
 
   @override
-  Future<String> create(String caseNo, String cause, String court) async {
+  Future<String> create(
+    String caseNo,
+    String cause,
+    String court, {
+    List<CaseParty>? parties,
+  }) async {
     if ([caseNo, cause, court].any((value) => value.trim().isEmpty)) {
       throw const ExperienceFailure('请填写案号、案由和法院');
     }
@@ -23,12 +28,19 @@ class MemoryExperience implements ExperienceRepository {
     )) {
       throw const ExperienceFailure('体验案件的案号和法院重复');
     }
+    final error = parties == null ? null : validateNewParties(parties);
+    if (error != null) throw ExperienceFailure(error);
     final id = 'demo-${++_sequence}';
     _cases[id] = ExperienceCase(
       id: id,
       caseNo: caseNo.trim(),
       cause: cause.trim(),
       court: court.trim(),
+      parties:
+          parties
+              ?.map((party) => party.identified('demo-party-${++_sequence}'))
+              .toList() ??
+          const [],
     );
     return id;
   }

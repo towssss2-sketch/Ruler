@@ -38,7 +38,12 @@ Future<void> showRow(WidgetTester tester, int index) async {
   await tester.scrollUntilVisible(
     find.text('当事人 $index'),
     300,
-    scrollable: find.byType(Scrollable).last,
+    scrollable: find
+        .descendant(
+          of: find.byType(ListView),
+          matching: find.byType(Scrollable),
+        )
+        .first,
   );
   await tester.pumpAndSettle();
 }
@@ -167,7 +172,7 @@ void offlineExperience() {
     await demo.enter(tester);
     await demo.createCase(tester);
     await online.tap(tester, '案件详情与当事人');
-    expect(find.textContaining('暂无当事人'), findsOneWidget);
+    expect(find.text('原告 · 虚构原告甲'), findsOneWidget);
     await online.tap(tester, '编辑当事人');
     await fillName(tester, 1, '虚构体验原告');
     await online.tap(tester, '保存体验当事人');

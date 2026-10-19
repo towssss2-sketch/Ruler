@@ -78,7 +78,12 @@ class ExperienceCase {
 /// 离线体验专用边界；真实 API 仓库将在独立交付中接入，避免把演示误报为联调。
 abstract class ExperienceRepository {
   Future<List<ExperienceCase>> load();
-  Future<String> create(String caseNo, String cause, String court);
+  Future<String> create(
+    String caseNo,
+    String cause,
+    String court, {
+    List<CaseParty>? parties,
+  });
   Future<void> update(String caseId, CaseFields fields);
   Future<void> saveParties(String caseId, List<CaseParty> parties);
   Future<void> remove(String caseId);
