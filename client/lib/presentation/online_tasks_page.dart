@@ -1,3 +1,4 @@
+import 'case_detail_page.dart';
 import '../domain/case_fields.dart';
 import 'case_edit_dialog.dart';
 import 'package:flutter/material.dart';
@@ -105,6 +106,18 @@ class _OnlineTasksPageState extends State<OnlineTasksPage> {
                   ),
                 ),
                 child: const Text('案件文件'),
+              ),
+              OutlinedButton(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => CaseDetailPage(
+                      load: () => widget.repository.caseDetail(_item.id),
+                      saveParties: (parties) =>
+                          widget.repository.saveParties(_item.id, parties),
+                    ),
+                  ),
+                ),
+                child: const Text('案件详情与当事人'),
               ),
               OnlineAction(label: '编辑案件信息', run: _edit),
               OnlineAction(label: '新增工作任务', run: _add),

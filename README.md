@@ -20,10 +20,10 @@ GitHub → Actions → **RULER 检查与测试包** → 选择本 PR 的成功�
 - `ruler-storage-validation`：解压后双击 `storage-acceptance.html`，区分真实 MinIO 与 OSS 离线测试。
 - `ruler-document-validation`：解压后双击 `document-acceptance.html`，查看文件上传、配额、版本与权限的中文验收结果。
 - `ruler-task-validation`：解压后双击 `task-acceptance.html`，查看常规任务和今日汇总的中文验收结果；法定期间计算、确认和提醒仍待阶段 5B。
-- `ruler-client-experience`：解压后打开 `client-acceptance.html`，查看 88 项实际 Flutter 测试与真实 Widget 渲染截图（界面协议替身，不代表真机）。
-- `ruler-client-api-validation`：解压打开 `client-api-acceptance.html`，查看真实 Dart/Dio→Nest→PostgreSQL/Redis/MinIO 的 10 个联调场景。
-- `ruler-client-https-validation`：解压打开 `client-https-acceptance.html`，查看本机双 HTTPS 的 11 个真实客户端场景，包含两个入口的未受信任证书拒绝。临时证书仅用于本机测试，不代表公共服务或真机通过。
-- `ruler-client-restricted-validation`：解压打开 `client-restricted-acceptance.html`，查看关闭注册、验证码和文档后的 11 个真实客户端场景及 12 项入口检查；仍是本机验证。
+- `ruler-client-experience`：解压后打开 `client-acceptance.html`，查看 100 项实际 Flutter 测试与真实 Widget 渲染截图（界面协议替身，不代表真机）。
+- `ruler-client-api-validation`：解压打开 `client-api-acceptance.html`，查看真实 Dart/Dio→Nest→PostgreSQL/Redis/MinIO 的 11 个联调场景。
+- `ruler-client-https-validation`：解压打开 `client-https-acceptance.html`，查看本机双 HTTPS 的 12 个真实客户端场景，包含两个入口的未受信任证书拒绝。临时证书仅用于本机测试，不代表公共服务或真机通过。
+- `ruler-client-restricted-validation`：解压打开 `client-restricted-acceptance.html`，查看关闭注册、验证码和文档后的 12 个真实客户端场景及 12 项入口检查；仍是本机验证。
 - coverage 文件包与 schema JSON 是自动检查证据，不是安装包。
 - `ruler-preview-plan`：解压后打开 `preview-plan.html` 审阅测试环境建议和当前缺项；报告保持 BLOCKED，不代表服务已部署。原始测试记录和完整中文方案一并提供。
 
@@ -148,3 +148,9 @@ dl.google.com、maven.google.com、Gradle/Maven 与 Docker 官方分发域名。
 连接版接入已有 PATCH 接口，支持修改五项基础信息，保存失败保留输入，成功后详情与列表更新；服务端当事人、备注、费用、文件和任务不随基础编辑清空。阶段和状态按实际返回显示；标记结案不会自动完成任务。离线虚构体验也可点击同一表单，只在本次内存保存。
 
 目前仍未交付全部案件字段/当事人编辑或公共测试服务。真实重登、权限和冲突验证见[案件编辑验收报告](docs/阶段11A2D验收报告.md)；截图 `client-case-edit.png`、`client-case-edit-demo.png` 收入中文体验报告包。
+
+### 案件详情与当事人（11A2E）
+
+案件内打开“案件详情与当事人”可查看当前文件/待办统计、其他案件信息及完整名单；进入“编辑当事人”维护原告/被告/第三人的姓名和可选资料。修改保留身份，确认移除只改草稿，最后保存才同步；至少保留一人，最多一百人。写成功后读失败只重试读取，取消不提交。
+
+“开始虚构体验”也能直接添加和修改当事人，关闭应用清除；公网服务和账号仍未交付。详情的其他案件字段本轮只读，新建多人表单、利益冲突 UI 后续继续。点击路径、测试及回退见[当事人验收报告](docs/阶段11A2E验收报告.md)。

@@ -7,6 +7,7 @@ class OnlineFixture {
   bool expire = false;
   bool failWrite = false;
   bool failRead = false;
+  int _partySequence = 10;
   final records = <Map<String, Object?>>[];
   final work = <Map<String, Object?>>[];
   final requests = <String>[];
@@ -46,12 +47,27 @@ class OnlineFixture {
       item['status'] = input['status'];
       return reply(item);
     }
-    if (request.method == 'PATCH' && request.path.startsWith('/cases/')) {
+    if (request.path.startsWith('/cases/') &&
+        ['GET', 'PATCH'].contains(request.method)) {
       final item = records.singleWhere(
         (item) => item['id'] == request.path.split('/').last,
       );
-      item.addAll(input);
-      return reply(item);
+      if (request.method == 'PATCH') {
+        item.addAll(input);
+        if (input['parties'] is List) {
+          item['parties'] = (input['parties'] as List).map((raw) {
+            final party = Map<String, Object?>.from(raw as Map);
+            return {...party, 'id': party['id'] ?? 'party-${++_partySequence}'};
+          }).toList();
+        }
+      }
+      return reply({
+        'documentCount': 0,
+        'pendingTaskCount': work.length,
+        'feeStatus': 'UNPAID',
+        'parties': <Object?>[],
+        ...item,
+      });
     }
     if (request.method == 'DELETE') {
       records.removeWhere((item) => item['id'] == request.path.split('/').last);
@@ -89,5 +105,8 @@ class OnlineFixture {
     'caseNo': '(2026)虚构民初1号',
     'cause': '虚构合同纠纷',
     'court': '虚构测试法院',
+    'parties': [
+      {'id': 'party-1', 'role': 'PLAINTIFF', 'name': '虚构甲', 'phone': '虚构电话旧'},
+    ],
   });
 }

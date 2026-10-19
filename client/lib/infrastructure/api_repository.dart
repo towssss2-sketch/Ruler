@@ -1,3 +1,5 @@
+import '../domain/case_detail.dart';
+import 'case_detail_wire.dart';
 import '../domain/case_fields.dart';
 import '../domain/online.dart';
 import 'api_session.dart';
@@ -58,6 +60,24 @@ class ApiRepository implements OnlineRepository {
       ),
     ),
   );
+
+  /// 实时读取授权详情，不使用摘要或另一案件缓存代替当事人名单。
+  @override
+  Future<CaseDetail> caseDetail(String id) async => readCaseDetail(
+    await session.request('GET', '/cases/${Uri.encodeComponent(id)}'),
+  );
+
+  /// 仅更新当事人名单；完成写入后由页面独立刷新，读失败不重复写入。
+  @override
+  Future<void> saveParties(String id, List<CaseParty> parties) async {
+    final error = validateParties(parties);
+    if (error != null) throw ApiFailure(error);
+    await session.request(
+      'PATCH',
+      '/cases/${Uri.encodeComponent(id)}',
+      data: {'parties': parties.map((party) => party.toJson()).toList()},
+    );
+  }
 
   @override
   Future<void> removeCase(String id) async {

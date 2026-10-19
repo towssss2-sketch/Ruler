@@ -1,3 +1,4 @@
+import 'case_detail.dart';
 import 'case_fields.dart';
 
 /// 仅含可显示的固定提示，禁止传入原始响应、凭据或网络异常。
@@ -63,6 +64,8 @@ abstract interface class OnlineRepository {
     String party,
   );
   Future<OnlineCase> updateCase(String id, CaseFields fields);
+  Future<CaseDetail> caseDetail(String id);
+  Future<void> saveParties(String id, List<CaseParty> parties);
   Future<void> removeCase(String id);
   Future<OnlinePage<OnlineTask>> tasks(String caseId, {int page = 1});
   Future<void> addTask(String caseId, String title, String? dueDate);
