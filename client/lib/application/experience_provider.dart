@@ -26,8 +26,13 @@ class ExperienceController extends AsyncNotifier<List<ExperienceCase>> {
     state = await AsyncValue.guard(_repository.load);
   }
 
-  Future<String> create(String caseNo, String cause, String court) async {
-    final id = await _repository.create(caseNo, cause, court);
+  Future<String> create(
+    String caseNo,
+    String cause,
+    String court, {
+    List<CaseParty>? parties,
+  }) async {
+    final id = await _repository.create(caseNo, cause, court, parties: parties);
     await _refresh();
     return id;
   }

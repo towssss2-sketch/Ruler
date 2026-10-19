@@ -1,4 +1,5 @@
 import 'case_detail.dart';
+import 'case_conflict.dart';
 import 'case_fields.dart';
 
 /// 仅含可显示的固定提示，禁止传入原始响应、凭据或网络异常。
@@ -63,6 +64,13 @@ abstract interface class OnlineRepository {
     String court,
     String party,
   );
+  Future<OnlineCase> createCaseWithParties(
+    String number,
+    String cause,
+    String court,
+    List<CaseParty> parties,
+  );
+  Future<OnlinePage<CaseConflict>> conflicts(String id, {int page = 1});
   Future<OnlineCase> updateCase(String id, CaseFields fields);
   Future<CaseDetail> caseDetail(String id);
   Future<void> saveParties(String id, List<CaseParty> parties);

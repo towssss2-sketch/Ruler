@@ -6,7 +6,7 @@ const prefix = restricted ? 'client-restricted' : 'client-https';
 const data = JSON.parse(readFileSync(target(`${prefix}-validation.json`), 'utf8'));
 assert.equal(data.transport, 'REAL_DART_DIO_NEST_POSTGRES_REDIS_MINIO');
 assert.equal(data.tls, 'LOCAL_TRUSTED_CERTIFICATE');
-assert.equal(data.passed, 12);
+assert.equal(data.passed, 13);
 assert.equal(data.failed, 0);
 assert.equal(data.skipped, 0);
 assert.equal(data.scenarios.length, data.passed);
@@ -21,7 +21,7 @@ const escape = text => String(text).replaceAll('&', '&amp;').replaceAll('<', '&l
 writeFileSync(target(`${prefix}-acceptance.html`), `<!doctype html><html lang="zh-CN"><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>RULER 本机 HTTPS 客户端联调</title>
 <style>body{font:16px/1.8 system-ui;max-width:900px;margin:2rem auto;padding:1rem}li{margin:.6rem 0}</style>
-<h1>真实客户端双 HTTPS 入口联调</h1><p>12 项通过，0 失败，0 跳过。</p>
+<h1>真实客户端双 HTTPS 入口联调</h1><p>13 项通过，0 失败，0 跳过。</p>
 ${restricted ? `<h2>本机隔离模式：额外 12 项入口检查通过</h2>
 <p>先用正常验证码注册流程创建两个随机虚构账号，关闭准备服务，重新启动隔离模式。
 以下入口在客户端业务联调前后均返回 404；没有临时打开注册或创建公开取码后门。</p>

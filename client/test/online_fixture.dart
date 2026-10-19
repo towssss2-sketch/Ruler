@@ -55,10 +55,7 @@ class OnlineFixture {
       if (request.method == 'PATCH') {
         item.addAll(input);
         if (input['parties'] is List) {
-          item['parties'] = (input['parties'] as List).map((raw) {
-            final party = Map<String, Object?>.from(raw as Map);
-            return {...party, 'id': party['id'] ?? 'party-${++_partySequence}'};
-          }).toList();
+          item['parties'] = _identify(input['parties'] as List);
         }
       }
       return reply({
@@ -83,6 +80,7 @@ class OnlineFixture {
         'stage': 'FIRST_INSTANCE',
         'status': 'ACTIVE',
         ...input,
+        'parties': _identify(input['parties'] as List),
       };
       records.add(item);
       return reply(item, 201);
@@ -94,6 +92,11 @@ class OnlineFixture {
           .toList(),
     );
   }
+
+  List<Map<String, Object?>> _identify(List raw) => raw.map((value) {
+    final party = Map<String, Object?>.from(value as Map);
+    return {...party, 'id': party['id'] ?? 'party-${++_partySequence}'};
+  }).toList();
 
   ResponseBody _page(List<Map<String, Object?>> items) =>
       reply({'items': items, 'total': items.length, 'page': 1, 'pageSize': 20});

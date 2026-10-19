@@ -93,3 +93,8 @@ String? validateParties(List<CaseParty> parties) {
   }
   return null;
 }
+
+/// 新建名单不能携带既有案件的身份，防止把编辑记录误当新增。
+String? validateNewParties(List<CaseParty> parties) =>
+    validateParties(parties) ??
+    (parties.any((party) => party.id != null) ? '新建名单不能使用已有当事人记录' : null);

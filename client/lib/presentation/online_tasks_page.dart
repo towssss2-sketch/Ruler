@@ -112,6 +112,8 @@ class _OnlineTasksPageState extends State<OnlineTasksPage> {
                   MaterialPageRoute<void>(
                     builder: (_) => CaseDetailPage(
                       load: () => widget.repository.caseDetail(_item.id),
+                      checkConflicts: (page) =>
+                          widget.repository.conflicts(_item.id, page: page),
                       saveParties: (parties) =>
                           widget.repository.saveParties(_item.id, parties),
                     ),

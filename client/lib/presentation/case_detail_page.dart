@@ -3,6 +3,9 @@ import '../domain/case_detail.dart';
 import '../domain/case_fields.dart';
 import 'online_widgets.dart';
 import 'party_editor.dart';
+import 'case_conflict_dialog.dart';
+import '../domain/case_conflict.dart';
+import '../domain/online.dart';
 
 /// 在线每次加载真实授权详情；离线由专用回调读取当前虚构快照。
 class CaseDetailPage extends StatefulWidget {
@@ -10,11 +13,13 @@ class CaseDetailPage extends StatefulWidget {
     required this.load,
     required this.saveParties,
     this.offline = false,
+    this.checkConflicts,
     super.key,
   });
   final Future<CaseDetail> Function() load;
   final Future<void> Function(List<CaseParty>) saveParties;
   final bool offline;
+  final Future<OnlinePage<CaseConflict>> Function(int)? checkConflicts;
   @override
   State<CaseDetailPage> createState() => _CaseDetailPageState();
 }
@@ -90,22 +95,33 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
         style: Theme.of(context).textTheme.titleMedium,
       ),
       OnlineAction(label: '编辑当事人', run: () => _edit(detail)),
-      if (detail.parties.isEmpty) const Text('暂无当事人，可点击编辑添加虚构记录'),
-      for (final party in detail.parties)
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('${partyRoles[party.role]} · ${party.name}'),
-                Text(
-                  '电话：${party.phone ?? '未填写'}\n证件号：${party.idCard ?? '未填写'}\n地址：${party.address ?? '未填写'}',
-                ),
-              ],
-            ),
+      if (widget.checkConflicts != null)
+        OutlinedButton(
+          onPressed: () => showDialog<void>(
+            context: context,
+            useRootNavigator: false,
+            builder: (_) => CaseConflictDialog(load: widget.checkConflicts!),
           ),
+          child: const Text('检查利益冲突'),
         ),
+      if (widget.offline) const Text('利益冲突检查需连接测试服务，离线体验不执行历史姓名匹配。'),
+      if (detail.parties.isEmpty) const Text('暂无当事人，可点击编辑添加虚构记录'),
+      for (final party in detail.parties) _party(party),
     ],
+  );
+
+  Widget _party(CaseParty party) => Card(
+    child: Padding(
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('${partyRoles[party.role]} · ${party.name}'),
+          Text(
+            '电话：${party.phone ?? '未填写'}\n证件号：${party.idCard ?? '未填写'}\n地址：${party.address ?? '未填写'}',
+          ),
+        ],
+      ),
+    ),
   );
 }

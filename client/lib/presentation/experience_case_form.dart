@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../application/experience_provider.dart';
 import '../domain/experience.dart';
+import '../domain/case_detail.dart';
+import 'draft_party_button.dart';
 
 class ExperienceCaseForm extends ConsumerStatefulWidget {
   const ExperienceCaseForm({super.key});
@@ -15,6 +17,9 @@ class _ExperienceCaseFormState extends ConsumerState<ExperienceCaseForm> {
   final _caseNo = TextEditingController(text: '(2026)虚构民初1号');
   final _cause = TextEditingController(text: '虚构合同纠纷');
   final _court = TextEditingController(text: '虚构测试法院');
+  List<CaseParty> _parties = [
+    const CaseParty(name: '虚构原告甲', role: 'PLAINTIFF'),
+  ];
   bool _busy = false;
   String? _error;
 
@@ -27,7 +32,7 @@ class _ExperienceCaseFormState extends ConsumerState<ExperienceCaseForm> {
   }
 
   Future<void> _save() async {
-    if (!_form.currentState!.validate()) return;
+    if (_busy || !_form.currentState!.validate()) return;
     setState(() {
       _busy = true;
       _error = null;
@@ -35,7 +40,7 @@ class _ExperienceCaseFormState extends ConsumerState<ExperienceCaseForm> {
     try {
       final id = await ref
           .read(experienceProvider.notifier)
-          .create(_caseNo.text, _cause.text, _court.text);
+          .create(_caseNo.text, _cause.text, _court.text, parties: _parties);
       if (mounted) Navigator.pop(context, id);
     } catch (error) {
       if (mounted) {
@@ -51,32 +56,40 @@ class _ExperienceCaseFormState extends ConsumerState<ExperienceCaseForm> {
   }
 
   @override
-  Widget build(BuildContext context) => AlertDialog(
-    title: const Text('新建虚构案件'),
-    content: SingleChildScrollView(
-      child: Form(
-        key: _form,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _field(_caseNo, '案号', 80),
-            _field(_cause, '案由', 128),
-            _field(_court, '法院', 128),
-            if (_error != null) Text(_error!),
-          ],
+  Widget build(BuildContext context) => PopScope(
+    canPop: !_busy,
+    child: AlertDialog(
+      title: const Text('新建虚构案件'),
+      content: SingleChildScrollView(
+        child: Form(
+          key: _form,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _field(_caseNo, '案号', 80),
+              _field(_cause, '案由', 128),
+              _field(_court, '法院', 128),
+              DraftPartyButton(
+                parties: _parties,
+                enabled: !_busy,
+                change: (values) => setState(() => _parties = values),
+              ),
+              if (_error != null) Text(_error!),
+            ],
+          ),
         ),
       ),
+      actions: [
+        TextButton(
+          onPressed: _busy ? null : () => Navigator.pop(context),
+          child: const Text('取消'),
+        ),
+        FilledButton(
+          onPressed: _busy ? null : _save,
+          child: Text(_busy ? '创建中…' : '创建体验案件'),
+        ),
+      ],
     ),
-    actions: [
-      TextButton(
-        onPressed: _busy ? null : () => Navigator.pop(context),
-        child: const Text('取消'),
-      ),
-      FilledButton(
-        onPressed: _busy ? null : _save,
-        child: Text(_busy ? '创建中…' : '创建体验案件'),
-      ),
-    ],
   );
 
   Widget _field(TextEditingController controller, String label, int limit) =>
