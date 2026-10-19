@@ -79,12 +79,12 @@ String? validateParties(List<CaseParty> parties) {
     final party = parties[i];
     if (!partyRoles.containsKey(party.role) ||
         party.name.trim().isEmpty ||
-        party.name.length > 128) {
+        party.name.runes.length > 128) {
       return '请核对第 ${i + 1} 位当事人的姓名和角色';
     }
-    if ((party.phone?.length ?? 0) > 64 ||
-        (party.idCard?.length ?? 0) > 64 ||
-        (party.address?.length ?? 0) > 1000) {
+    if ((party.phone?.runes.length ?? 0) > 64 ||
+        (party.idCard?.runes.length ?? 0) > 64 ||
+        (party.address?.runes.length ?? 0) > 1000) {
       return '第 ${i + 1} 位当事人的可选资料过长';
     }
     if (party.id != null && (party.id!.isEmpty || !ids.add(party.id!))) {

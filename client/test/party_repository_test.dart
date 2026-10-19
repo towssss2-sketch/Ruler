@@ -83,6 +83,14 @@ void main() {
     const valid = CaseParty(name: '虚构', role: 'PLAINTIFF');
     expect(validateParties([]), isNotNull);
     expect(validateParties(List.filled(100, valid)), isNull);
+    expect(
+      validateParties([CaseParty(name: '𠀀' * 128, role: 'PLAINTIFF')]),
+      isNull,
+    );
+    expect(
+      validateParties([CaseParty(name: '𠀀' * 129, role: 'PLAINTIFF')]),
+      isNotNull,
+    );
     expect(validateParties(List.filled(101, valid)), isNotNull);
     expect(
       validateParties([valid, const CaseParty(name: ' ', role: 'DEFENDANT')]),
