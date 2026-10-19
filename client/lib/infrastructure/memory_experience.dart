@@ -1,3 +1,4 @@
+import '../domain/case_detail.dart';
 import '../domain/case_fields.dart';
 import '../domain/experience.dart';
 import '../domain/documents.dart';
@@ -64,6 +65,27 @@ class MemoryExperience implements ExperienceRepository {
       throw const ExperienceFailure('体验案件的案号和法院重复');
     }
     _cases[caseId] = record.copyWith(fields: normalized);
+  }
+
+  /// 演示按本案 id 保留、添加及移除当事人，拒绝外案 id，保持其他数据。
+  @override
+  Future<void> saveParties(String caseId, List<CaseParty> parties) async {
+    final current = _record(caseId);
+    final error = validateParties(parties);
+    if (error != null) throw ExperienceFailure(error);
+    final ids = current.parties.map((party) => party.id).toSet();
+    if (parties.any((party) => party.id != null && !ids.contains(party.id))) {
+      throw const ExperienceFailure('当事人记录不属于此体验案件');
+    }
+    _cases[caseId] = current.copyWith(
+      parties: parties
+          .map(
+            (party) => party.id == null
+                ? party.identified('demo-party-${++_sequence}')
+                : party,
+          )
+          .toList(),
+    );
   }
 
   @override

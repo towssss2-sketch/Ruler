@@ -1,3 +1,5 @@
+import '../domain/case_detail.dart';
+import 'case_detail_page.dart';
 import '../domain/case_fields.dart';
 import 'case_edit_dialog.dart';
 import 'package:flutter/material.dart';
@@ -74,6 +76,54 @@ class ExperienceDetailPage extends ConsumerWidget {
     );
   }
 
+  Future<void> _parties(BuildContext context, WidgetRef ref, String id) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => CaseDetailPage(
+          offline: true,
+          load: () async {
+            final records = await ref.read(experienceProvider.future);
+            final current = records.firstWhere((item) => item.id == id);
+            return CaseDetail(
+              id: id,
+              fields: current.fields,
+              parties: current.parties,
+              documentCount: current.files.length,
+              pendingTaskCount: current.tasks
+                  .where((task) => !task.done)
+                  .length,
+            );
+          },
+          saveParties: (parties) =>
+              ref.read(experienceProvider.notifier).saveParties(id, parties),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _remove(BuildContext context, WidgetRef ref, String id) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('移除此体验案件？'),
+        content: const Text('仅清除本次虚构案件、任务和示例条目，不影响真实数据。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('确认移除'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await ref.read(experienceProvider.notifier).remove(id);
+    if (context.mounted) context.go('/experience');
+  }
+
   Widget _summary(BuildContext context, WidgetRef ref, ExperienceCase record) =>
       ListView(
         padding: const EdgeInsets.all(20),
@@ -105,29 +155,12 @@ class ExperienceDetailPage extends ConsumerWidget {
             },
           ),
           ExperienceAction(
+            label: '案件详情与当事人',
+            onRun: () => _parties(context, ref, record.id),
+          ),
+          ExperienceAction(
             label: '移除体验案件',
-            onRun: () async {
-              final confirmed = await showDialog<bool>(
-                context: context,
-                builder: (_) => AlertDialog(
-                  title: const Text('移除此体验案件？'),
-                  content: const Text('仅清除本次虚构案件、任务和示例条目，不影响真实数据。'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      child: const Text('取消'),
-                    ),
-                    FilledButton(
-                      onPressed: () => Navigator.pop(context, true),
-                      child: const Text('确认移除'),
-                    ),
-                  ],
-                ),
-              );
-              if (confirmed != true) return;
-              await ref.read(experienceProvider.notifier).remove(record.id);
-              if (context.mounted) context.go('/experience');
-            },
+            onRun: () => _remove(context, ref, record.id),
           ),
         ],
       );

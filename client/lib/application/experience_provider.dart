@@ -1,3 +1,4 @@
+import '../domain/case_detail.dart';
 import '../domain/case_fields.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/experience.dart';
@@ -34,6 +35,12 @@ class ExperienceController extends AsyncNotifier<List<ExperienceCase>> {
   /// 编辑当前进程的虚构案件并刷新页面；不连接服务端或持久化到磁盘。
   Future<void> editCase(String id, CaseFields fields) async {
     await _repository.update(id, fields);
+    await _refresh();
+  }
+
+  /// 保存虚构名单后刷新内存快照，在线仓库不参与此流程。
+  Future<void> saveParties(String id, List<CaseParty> parties) async {
+    await _repository.saveParties(id, parties);
     await _refresh();
   }
 

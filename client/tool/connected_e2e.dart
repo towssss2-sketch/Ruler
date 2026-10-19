@@ -1,3 +1,4 @@
+import 'party_e2e.dart';
 import 'case_edit_e2e.dart';
 import 'dart:convert';
 import 'dart:io';
@@ -52,24 +53,15 @@ Future<void> runScenarios(bool verifiedTls) async {
     );
     await editCaseScenario(repository, item.id);
     _scenarios.add('真实修改案件基础信息和结案，保留当事人、文件统计与待办任务');
+    await partyScenario(repository, item.id);
+    _scenarios.add('真实当事人新增、修改、移除、可选资料清空和外案身份拒绝');
     await first.logout();
     await persistence(origin, emails[0], password, item);
     await second.login(emails[1], password);
     await isolation(second, item);
     await second.logout();
     await removal(origin, emails[0], password, item);
-    stdout.write(
-      jsonEncode({
-        'passed': _scenarios.length,
-        'failed': 0,
-        'skipped': 0,
-        'scenarios': _scenarios,
-        'transport': 'REAL_DART_DIO_NEST_POSTGRES_REDIS_MINIO',
-        'tls': verifiedTls ? 'LOCAL_TRUSTED_CERTIFICATE' : 'HTTP_LOOPBACK',
-        'device': 'NOT_RUN',
-        'publicTestService': 'NOT_AVAILABLE',
-      }),
-    );
+    writeResult(verifiedTls);
   } catch (_) {
     stderr.write('客户端联调断言失败（已隐藏凭据及原始响应）');
     exitCode = 1;
@@ -77,6 +69,22 @@ Future<void> runScenarios(bool verifiedTls) async {
     first.close();
     second.close();
   }
+}
+
+/// 只输出固定场景结果，不包含当事人资料、登录凭据或签名。
+void writeResult(bool verifiedTls) {
+  stdout.write(
+    jsonEncode({
+      'passed': _scenarios.length,
+      'failed': 0,
+      'skipped': 0,
+      'scenarios': _scenarios,
+      'transport': 'REAL_DART_DIO_NEST_POSTGRES_REDIS_MINIO',
+      'tls': verifiedTls ? 'LOCAL_TRUSTED_CERTIFICATE' : 'HTTP_LOOPBACK',
+      'device': 'NOT_RUN',
+      'publicTestService': 'NOT_AVAILABLE',
+    }),
+  );
 }
 
 /// 真实创建、完成、恢复、删除工作任务。
@@ -107,6 +115,7 @@ Future<void> persistence(
     final repository = ApiRepository(session);
     check((await repository.cases()).items.single.id == item.id);
     await verifyEditedCase(repository, item.id);
+    await verifyPartyPersistence(repository, item.id);
     check((await repository.tasks(item.id)).items.single.title == '虚构持久化任务');
     _scenarios.add('销毁客户端后重新登录，案件和任务仍保留');
     await session.logout();
@@ -119,6 +128,7 @@ Future<void> persistence(
 Future<void> isolation(ApiSession session, OnlineCase item) async {
   final repository = ApiRepository(session);
   check((await repository.cases()).total == 0);
+  await partyIsolation(repository, item.id);
   await forbidden(() async {
     await repository.tasks(item.id);
   });

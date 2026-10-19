@@ -1,3 +1,4 @@
+import 'case_detail.dart';
 import 'case_fields.dart';
 
 /// 仅用于离线交互体验，不能作为真实案件或上传凭证。
@@ -32,9 +33,11 @@ class ExperienceCase {
     required this.court,
     this.stage = 'FIRST_INSTANCE',
     this.status = 'ACTIVE',
+    List<CaseParty> parties = const [],
     List<ExperienceTask> tasks = const [],
     List<ExperienceFile> files = const [],
-  }) : tasks = List.unmodifiable(tasks),
+  }) : parties = List.unmodifiable(parties),
+       tasks = List.unmodifiable(tasks),
        files = List.unmodifiable(files);
 
   final String id;
@@ -50,11 +53,13 @@ class ExperienceCase {
     stage: stage,
     status: status,
   );
+  final List<CaseParty> parties;
   final List<ExperienceTask> tasks;
   final List<ExperienceFile> files;
 
   ExperienceCase copyWith({
     CaseFields? fields,
+    List<CaseParty>? parties,
     List<ExperienceTask>? tasks,
     List<ExperienceFile>? files,
   }) => ExperienceCase(
@@ -64,6 +69,7 @@ class ExperienceCase {
     court: fields?.court ?? court,
     stage: fields?.stage ?? stage,
     status: fields?.status ?? status,
+    parties: parties ?? this.parties,
     tasks: tasks ?? this.tasks,
     files: files ?? this.files,
   );
@@ -74,6 +80,7 @@ abstract class ExperienceRepository {
   Future<List<ExperienceCase>> load();
   Future<String> create(String caseNo, String cause, String court);
   Future<void> update(String caseId, CaseFields fields);
+  Future<void> saveParties(String caseId, List<CaseParty> parties);
   Future<void> remove(String caseId);
   Future<void> addTask(String caseId, String title);
   Future<void> toggleTask(String caseId, String taskId);
