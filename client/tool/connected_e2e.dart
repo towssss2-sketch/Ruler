@@ -2,6 +2,7 @@ import 'party_e2e.dart';
 import 'package:ruler_client/domain/case_filters.dart';
 import 'case_conflict_e2e.dart';
 import 'case_edit_e2e.dart';
+import 'case_supplement_e2e.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:dio/dio.dart';
@@ -57,6 +58,8 @@ Future<void> runScenarios(bool verifiedTls) async {
     _scenarios.add('真实修改案件基础信息和结案，保留当事人、文件统计与待办任务');
     await partyScenario(repository, item.id);
     _scenarios.add('真实当事人新增、修改、移除、可选资料清空和外案身份拒绝');
+    await supplementScenario(repository, item.id);
+    _scenarios.add('真实案件其他资料编辑、精确金额、空值清除、重登保留与越权拒绝');
     await conflictScenario(repository);
     _scenarios.add('真实多人建案与历史相似姓名检查、删除记录、分页和候选去重');
     _scenarios.add('真实法院阶段状态组合筛选、关键词分页与修改后更新时间排序');
@@ -145,6 +148,7 @@ Future<void> isolation(ApiSession session, OnlineCase item) async {
   );
   await partyIsolation(repository, item.id);
   await conflictIsolation(repository, item.id);
+  await forbidden(() => repository.saveSupplement(item.id, editedSupplement));
   await forbidden(() async {
     await repository.tasks(item.id);
   });

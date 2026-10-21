@@ -115,6 +115,17 @@ class ApiRepository implements OnlineRepository {
     await session.request('DELETE', '/cases/${Uri.encodeComponent(id)}');
   }
 
+  /// 仅写六项其他资料；成功后独立重读，读失败不会重复提交。
+  @override
+  Future<void> saveSupplement(String id, CaseSupplement value) async {
+    if (value.error != null) throw ApiFailure(value.error!);
+    await session.request(
+      'PATCH',
+      '/cases/${Uri.encodeComponent(id)}',
+      data: value.normalized.toJson(),
+    );
+  }
+
   @override
   Future<OnlinePage<OnlineTask>> tasks(String caseId, {int page = 1}) async {
     final result = await session.request(

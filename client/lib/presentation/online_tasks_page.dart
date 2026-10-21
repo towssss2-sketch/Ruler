@@ -116,6 +116,8 @@ class _OnlineTasksPageState extends State<OnlineTasksPage> {
                           widget.repository.conflicts(_item.id, page: page),
                       saveParties: (parties) =>
                           widget.repository.saveParties(_item.id, parties),
+                      saveSupplement: (value) =>
+                          widget.repository.saveSupplement(_item.id, value),
                     ),
                   ),
                 ),

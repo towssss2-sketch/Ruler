@@ -33,6 +33,7 @@ class ExperienceCase {
     required this.court,
     this.stage = 'FIRST_INSTANCE',
     this.status = 'ACTIVE',
+    this.supplement = const CaseSupplement(),
     DateTime? updatedAt,
     List<CaseParty> parties = const [],
     List<ExperienceTask> tasks = const [],
@@ -50,6 +51,7 @@ class ExperienceCase {
   final String stage;
   final String status;
   final DateTime updatedAt;
+  final CaseSupplement supplement;
   CaseFields get fields => CaseFields(
     caseNo: caseNo,
     cause: cause,
@@ -63,6 +65,7 @@ class ExperienceCase {
 
   ExperienceCase copyWith({
     CaseFields? fields,
+    CaseSupplement? supplement,
     DateTime? updatedAt,
     List<CaseParty>? parties,
     List<ExperienceTask>? tasks,
@@ -75,6 +78,7 @@ class ExperienceCase {
     court: fields?.court ?? court,
     stage: fields?.stage ?? stage,
     status: fields?.status ?? status,
+    supplement: supplement ?? this.supplement,
     parties: parties ?? this.parties,
     tasks: tasks ?? this.tasks,
     files: files ?? this.files,
@@ -92,6 +96,7 @@ abstract class ExperienceRepository {
   });
   Future<void> update(String caseId, CaseFields fields);
   Future<void> saveParties(String caseId, List<CaseParty> parties);
+  Future<void> saveSupplement(String caseId, CaseSupplement value);
   Future<void> remove(String caseId);
   Future<void> addTask(String caseId, String title);
   Future<void> toggleTask(String caseId, String taskId);

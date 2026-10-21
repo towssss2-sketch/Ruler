@@ -54,6 +54,11 @@ class ExperienceController extends AsyncNotifier<List<ExperienceCase>> {
     await _refresh();
   }
 
+  Future<void> saveSupplement(String id, CaseSupplement value) async {
+    await _repository.saveSupplement(id, value);
+    await _refresh();
+  }
+
   Future<void> addTask(String id, String title) async {
     await _repository.addTask(id, title);
     await _refresh();

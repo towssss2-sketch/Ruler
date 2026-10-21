@@ -79,6 +79,7 @@ abstract interface class OnlineRepository {
   Future<OnlineCase> updateCase(String id, CaseFields fields);
   Future<CaseDetail> caseDetail(String id);
   Future<void> saveParties(String id, List<CaseParty> parties);
+  Future<void> saveSupplement(String id, CaseSupplement value);
   Future<void> removeCase(String id);
   Future<OnlinePage<OnlineTask>> tasks(String caseId, {int page = 1});
   Future<void> addTask(String caseId, String title, String? dueDate);

@@ -1,12 +1,8 @@
 import 'case_fields.dart';
+import 'case_supplement.dart';
+export 'case_supplement.dart';
 
 const partyRoles = {'PLAINTIFF': '原告', 'DEFENDANT': '被告', 'THIRD_PARTY': '第三人'};
-const feeStatuses = {
-  'UNPAID': '未付',
-  'PARTIAL': '部分已付',
-  'PAID': '已付',
-  'WAIVED': '免收',
-};
 
 /// 当事人快照；已有记录带 id，新记录不带；空可选值明确清空。
 class CaseParty {
@@ -69,6 +65,14 @@ class CaseDetail {
   final String? notes;
   final String? fee;
   final String feeStatus;
+  CaseSupplement get supplement => CaseSupplement(
+    judge: judge,
+    clerk: clerk,
+    clerkPhone: clerkPhone,
+    notes: notes,
+    fee: fee,
+    feeStatus: feeStatus,
+  );
 }
 
 /// 对整个列表验证，包括当前屏幕外的行，避免滚动表单漏校验。

@@ -2,6 +2,7 @@ import 'package:ruler_client/domain/case_fields.dart';
 import 'package:ruler_client/domain/online.dart';
 import 'package:ruler_client/infrastructure/api_repository.dart';
 import 'package:ruler_client/infrastructure/api_session.dart';
+import 'case_supplement_e2e.dart';
 
 const editedCase = CaseFields(
   caseNo: '(2026)虚构民终24号',
@@ -13,11 +14,7 @@ const editedCase = CaseFields(
 
 /// 真实 PATCH 前后比较详情，确保基础编辑保留未提交的当事人和备注等字段。
 Future<void> editCaseScenario(ApiRepository repository, String id) async {
-  await repository.session.request(
-    'PATCH',
-    '/cases/$id',
-    data: {'notes': '虚构保留备注', 'judge': '虚构审判员', 'fee': '123.45'},
-  );
+  await repository.saveSupplement(id, editedSupplement);
   final before = jsonObject(
     await repository.session.request('GET', '/cases/$id'),
   );
