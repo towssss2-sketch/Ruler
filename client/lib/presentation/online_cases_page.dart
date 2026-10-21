@@ -1,4 +1,6 @@
 import '../domain/case_fields.dart';
+import '../domain/case_filters.dart';
+import 'case_filter_bar.dart';
 import 'package:flutter/material.dart';
 import '../domain/online.dart';
 import 'online_form.dart';
@@ -21,8 +23,9 @@ class OnlineCasesPage extends StatefulWidget {
 class _OnlineCasesPageState extends State<OnlineCasesPage> {
   final _search = TextEditingController();
   String _keyword = '';
+  CaseFilters _filters = const CaseFilters();
   int _page = 1;
-  late Future<OnlinePage<OnlineCase>> _result = widget.repository.cases();
+  late Future<OnlinePage<OnlineCase>> _result = _read();
   @override
   void dispose() {
     _search.dispose();
@@ -31,8 +34,23 @@ class _OnlineCasesPageState extends State<OnlineCasesPage> {
 
   void _load([int? page]) => setState(() {
     _page = page ?? _page;
-    _result = widget.repository.cases(keyword: _keyword, page: _page);
+    _result = _read();
   });
+
+  Future<OnlinePage<OnlineCase>> _read() {
+    final future = widget.repository.cases(
+      keyword: _keyword,
+      page: _page,
+      filters: _filters,
+    );
+    future.ignore();
+    return future;
+  }
+
+  void _filter(CaseFilters value) {
+    _filters = value;
+    _load(1);
+  }
 
   Future<void> _create() async {
     final saved = await showDialog<bool>(
@@ -92,6 +110,7 @@ class _OnlineCasesPageState extends State<OnlineCasesPage> {
               ],
             ),
           ),
+          CaseFilterBar(value: _filters, change: _filter),
           Expanded(
             child: OnlineResult(future: _result, retry: _load, render: _list),
           ),

@@ -1,6 +1,7 @@
 import 'package:ruler_client/domain/case_detail.dart';
 import 'package:ruler_client/infrastructure/api_repository.dart';
 import 'connected_e2e.dart' show check, forbidden;
+import 'case_filter_e2e.dart';
 
 const _name = '虚构紫杉专用甲';
 const _parties = [
@@ -28,6 +29,7 @@ Future<void> conflictScenario(ApiRepository repository) async {
   );
   check((await repository.conflicts(source.id)).total == 0);
   final targets = await createHistory(repository);
+  await filterScenario(repository, targets);
   await repository.removeCase(targets.first);
   // 历史案件中已移除的姓名仍参与检查；当前源案件只使用未移除姓名。
   await repository.saveParties(targets.last, [
