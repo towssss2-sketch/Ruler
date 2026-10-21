@@ -113,6 +113,17 @@ class MemoryExperience implements ExperienceRepository {
     _cases.remove(caseId);
   }
 
+  /// 更新虚构资料及案件排序时间；校验失败保留原快照和关联数据。
+  @override
+  Future<void> saveSupplement(String caseId, CaseSupplement value) async {
+    final record = _record(caseId);
+    if (value.error != null) throw ExperienceFailure(value.error!);
+    _cases[caseId] = record.copyWith(
+      supplement: value.normalized,
+      updatedAt: _now().toUtc(),
+    );
+  }
+
   @override
   Future<void> addTask(String caseId, String title) async {
     if (title.trim().isEmpty || title.trim().length > 255) {

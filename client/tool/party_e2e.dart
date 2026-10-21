@@ -2,6 +2,7 @@ import 'package:ruler_client/domain/case_detail.dart';
 import 'package:ruler_client/domain/online.dart';
 import 'package:ruler_client/infrastructure/api_repository.dart';
 import 'connected_e2e.dart' show check, forbidden;
+import 'case_supplement_e2e.dart';
 
 String? _retainedId;
 
@@ -63,6 +64,7 @@ Future<void> partyScenario(ApiRepository repository, String id) async {
 /// 重登后的新仓库读取真实保存的名单及敏感可选字段，不复用前一界面。
 Future<void> verifyPartyPersistence(ApiRepository repository, String id) async {
   final detail = await repository.caseDetail(id);
+  verifySupplement(detail);
   check(detail.parties.length == 2);
   final kept = detail.parties.singleWhere((party) => party.id == _retainedId);
   check(kept.name == '虚构甲更新' && kept.role == 'DEFENDANT');

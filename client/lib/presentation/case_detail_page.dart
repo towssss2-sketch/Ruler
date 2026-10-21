@@ -3,6 +3,7 @@ import '../domain/case_detail.dart';
 import '../domain/case_fields.dart';
 import 'online_widgets.dart';
 import 'party_editor.dart';
+import 'case_supplement_editor.dart';
 import 'case_conflict_dialog.dart';
 import '../domain/case_conflict.dart';
 import '../domain/online.dart';
@@ -12,12 +13,14 @@ class CaseDetailPage extends StatefulWidget {
   const CaseDetailPage({
     required this.load,
     required this.saveParties,
+    required this.saveSupplement,
     this.offline = false,
     this.checkConflicts,
     super.key,
   });
   final Future<CaseDetail> Function() load;
   final Future<void> Function(List<CaseParty>) saveParties;
+  final Future<void> Function(CaseSupplement) saveSupplement;
   final bool offline;
   final Future<OnlinePage<CaseConflict>> Function(int)? checkConflicts;
   @override
@@ -43,6 +46,19 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
         builder: (_) => PartyEditor(
           parties: detail.parties,
           save: widget.saveParties,
+          offline: widget.offline,
+        ),
+      ),
+    );
+    if (saved == true && mounted) _reload();
+  }
+
+  Future<void> _editSupplement(CaseDetail detail) async {
+    final saved = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => CaseSupplementEditor(
+          initial: detail.supplement,
+          save: widget.saveSupplement,
           offline: widget.offline,
         ),
       ),
@@ -81,14 +97,7 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
             ? '${detail.documentCount} 个示例版本 · ${detail.pendingTaskCount} 项待办'
             : '${detail.documentCount} 份当前文件 · ${detail.pendingTaskCount} 项待办',
       ),
-      if (!widget.offline) ...[
-        const Divider(),
-        Text(
-          '审判员：${detail.judge ?? '未填写'}\n书记员：${detail.clerk ?? '未填写'}\n书记员电话：${detail.clerkPhone ?? '未填写'}',
-        ),
-        Text('费用：${detail.fee ?? '未填写'} · ${feeStatuses[detail.feeStatus]}'),
-        Text('备注：${detail.notes ?? '未填写'}'),
-      ],
+      _supplement(detail),
       const Divider(),
       Text(
         '当事人（${detail.parties.length}）',
@@ -107,6 +116,19 @@ class _CaseDetailPageState extends State<CaseDetailPage> {
       if (widget.offline) const Text('利益冲突检查需连接测试服务，离线体验不执行历史姓名匹配。'),
       if (detail.parties.isEmpty) const Text('暂无当事人，可点击编辑添加虚构记录'),
       for (final party in detail.parties) _party(party),
+    ],
+  );
+
+  Widget _supplement(CaseDetail detail) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const Divider(),
+      Text(
+        '审判员：${detail.judge ?? '未填写'}\n书记员：${detail.clerk ?? '未填写'}\n书记员电话：${detail.clerkPhone ?? '未填写'}',
+      ),
+      Text('费用（元）：${detail.fee ?? '未填写'} · ${feeStatuses[detail.feeStatus]}'),
+      Text('备注：${detail.notes ?? '未填写'}'),
+      OnlineAction(label: '编辑其他案件信息', run: () => _editSupplement(detail)),
     ],
   );
 

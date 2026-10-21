@@ -57,6 +57,16 @@ void onlineCreation() {
     await online.tap(tester, '(2026)虚构民初2号');
     await online.tap(tester, '案件详情与当事人');
     expect(find.text('原告 · 虚构原告'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('被告 · 虚构被告'),
+      250,
+      scrollable: find
+          .descendant(
+            of: find.byType(ListView),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
     expect(find.text('被告 · 虚构被告'), findsOneWidget);
   });
 }

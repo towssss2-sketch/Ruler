@@ -87,6 +87,12 @@ class ExperienceDetailPage extends ConsumerWidget {
             return CaseDetail(
               id: id,
               fields: current.fields,
+              judge: current.supplement.judge,
+              clerk: current.supplement.clerk,
+              clerkPhone: current.supplement.clerkPhone,
+              notes: current.supplement.notes,
+              fee: current.supplement.fee,
+              feeStatus: current.supplement.feeStatus,
               parties: current.parties,
               documentCount: current.files.length,
               pendingTaskCount: current.tasks
@@ -96,6 +102,8 @@ class ExperienceDetailPage extends ConsumerWidget {
           },
           saveParties: (parties) =>
               ref.read(experienceProvider.notifier).saveParties(id, parties),
+          saveSupplement: (value) =>
+              ref.read(experienceProvider.notifier).saveSupplement(id, value),
         ),
       ),
     );

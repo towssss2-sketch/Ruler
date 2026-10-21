@@ -8,11 +8,10 @@ CaseDetail readCaseDetail(Object? raw) {
   final value = jsonObject(raw);
   final stage = jsonText(value, 'stage');
   final status = jsonText(value, 'status');
-  final feeStatus = jsonText(value, 'feeStatus');
+  final supplement = _supplement(value);
   final parties = value['parties'];
   if (!caseStages.containsKey(stage) ||
       !caseStatuses.containsKey(status) ||
-      !feeStatuses.containsKey(feeStatus) ||
       parties is! List ||
       parties.length > 100) {
     throw const ApiFailure('服务响应格式异常。');
@@ -43,13 +42,26 @@ CaseDetail readCaseDetail(Object? raw) {
     parties: parsed,
     documentCount: count(value, 'documentCount'),
     pendingTaskCount: count(value, 'pendingTaskCount'),
+    judge: supplement.judge,
+    clerk: supplement.clerk,
+    clerkPhone: supplement.clerkPhone,
+    notes: supplement.notes,
+    fee: supplement.fee,
+    feeStatus: supplement.feeStatus,
+  );
+}
+
+CaseSupplement _supplement(Map<String, Object?> value) {
+  final result = CaseSupplement(
     judge: optionalText(value, 'judge'),
     clerk: optionalText(value, 'clerk'),
     clerkPhone: optionalText(value, 'clerkPhone'),
     notes: optionalText(value, 'notes'),
     fee: optionalText(value, 'fee'),
-    feeStatus: feeStatus,
+    feeStatus: jsonText(value, 'feeStatus'),
   );
+  if (result.error != null) throw const ApiFailure('服务响应格式异常。');
+  return result;
 }
 
 String? optionalText(Map<String, Object?> value, String key) {
