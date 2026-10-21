@@ -33,10 +33,13 @@ class ExperienceCase {
     required this.court,
     this.stage = 'FIRST_INSTANCE',
     this.status = 'ACTIVE',
+    DateTime? updatedAt,
     List<CaseParty> parties = const [],
     List<ExperienceTask> tasks = const [],
     List<ExperienceFile> files = const [],
-  }) : parties = List.unmodifiable(parties),
+  }) : updatedAt =
+           updatedAt ?? DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+       parties = List.unmodifiable(parties),
        tasks = List.unmodifiable(tasks),
        files = List.unmodifiable(files);
 
@@ -46,6 +49,7 @@ class ExperienceCase {
   final String court;
   final String stage;
   final String status;
+  final DateTime updatedAt;
   CaseFields get fields => CaseFields(
     caseNo: caseNo,
     cause: cause,
@@ -59,11 +63,13 @@ class ExperienceCase {
 
   ExperienceCase copyWith({
     CaseFields? fields,
+    DateTime? updatedAt,
     List<CaseParty>? parties,
     List<ExperienceTask>? tasks,
     List<ExperienceFile>? files,
   }) => ExperienceCase(
     id: id,
+    updatedAt: updatedAt ?? this.updatedAt,
     caseNo: fields?.caseNo ?? caseNo,
     cause: fields?.cause ?? cause,
     court: fields?.court ?? court,

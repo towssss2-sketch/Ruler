@@ -231,6 +231,8 @@ jobs:
             test-results/client-parties-demo.png
             test-results/client-create-parties.png
             test-results/client-conflicts.png
+            test-results/client-case-filters.png
+            test-results/client-case-filters-demo.png
             test-results/client-validation-events.jsonl
           if-no-files-found: error
           retention-days: 14

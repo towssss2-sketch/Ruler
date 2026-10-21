@@ -3,6 +3,7 @@ import '../domain/case_conflict.dart';
 import 'case_conflict_wire.dart';
 import 'case_detail_wire.dart';
 import '../domain/case_fields.dart';
+import '../domain/case_filters.dart';
 import '../domain/online.dart';
 import 'api_session.dart';
 
@@ -15,13 +16,16 @@ class ApiRepository implements OnlineRepository {
   Future<OnlinePage<OnlineCase>> cases({
     String keyword = '',
     int page = 1,
+    CaseFilters filters = const CaseFilters(),
   }) async {
+    if (filters.error != null) throw ApiFailure(filters.error!);
     final result = await session.request(
       'GET',
       '/cases',
       query: {
         'page': page,
         'pageSize': 20,
+        ...filters.toQuery(),
         if (keyword.trim().isNotEmpty) 'keyword': keyword.trim(),
       },
     );

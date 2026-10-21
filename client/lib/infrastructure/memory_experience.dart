@@ -5,6 +5,8 @@ import '../domain/documents.dart';
 
 /// 只保存本进程的虚构体验数据；无网络、磁盘和真实验证码。
 class MemoryExperience implements ExperienceRepository {
+  MemoryExperience({DateTime Function()? now}) : _now = now ?? DateTime.now;
+  final DateTime Function() _now;
   final Map<String, ExperienceCase> _cases = {};
   final Map<String, int> _versions = {};
   int _sequence = 0;
@@ -33,6 +35,7 @@ class MemoryExperience implements ExperienceRepository {
     final id = 'demo-${++_sequence}';
     _cases[id] = ExperienceCase(
       id: id,
+      updatedAt: _now().toUtc(),
       caseNo: caseNo.trim(),
       cause: cause.trim(),
       court: court.trim(),
@@ -76,7 +79,10 @@ class MemoryExperience implements ExperienceRepository {
     )) {
       throw const ExperienceFailure('体验案件的案号和法院重复');
     }
-    _cases[caseId] = record.copyWith(fields: normalized);
+    _cases[caseId] = record.copyWith(
+      fields: normalized,
+      updatedAt: _now().toUtc(),
+    );
   }
 
   /// 演示按本案 id 保留、添加及移除当事人，拒绝外案 id，保持其他数据。
@@ -90,6 +96,7 @@ class MemoryExperience implements ExperienceRepository {
       throw const ExperienceFailure('当事人记录不属于此体验案件');
     }
     _cases[caseId] = current.copyWith(
+      updatedAt: _now().toUtc(),
       parties: parties
           .map(
             (party) => party.id == null

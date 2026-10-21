@@ -1,6 +1,7 @@
 import 'case_detail.dart';
 import 'case_conflict.dart';
 import 'case_fields.dart';
+import 'case_filters.dart';
 
 /// 仅含可显示的固定提示，禁止传入原始响应、凭据或网络异常。
 class ApiFailure implements Exception {
@@ -57,7 +58,11 @@ class OnlinePage<T> {
 
 /// 连接版用例边界；实现必须通过后端授权，不复用内存演示仓库。
 abstract interface class OnlineRepository {
-  Future<OnlinePage<OnlineCase>> cases({String keyword = '', int page = 1});
+  Future<OnlinePage<OnlineCase>> cases({
+    String keyword = '',
+    int page = 1,
+    CaseFilters filters = const CaseFilters(),
+  });
   Future<OnlineCase> createCase(
     String number,
     String cause,

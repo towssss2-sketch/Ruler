@@ -3,6 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../application/experience_provider.dart';
 import '../domain/experience.dart';
+import '../domain/case_filters.dart';
+import '../domain/case_fields.dart';
+import '../infrastructure/experience_query.dart';
+import 'case_filter_bar.dart';
 import 'experience_case_form.dart';
 import 'experience_widgets.dart';
 
@@ -15,6 +19,7 @@ class ExperienceListPage extends ConsumerStatefulWidget {
 
 class _ExperienceListPageState extends ConsumerState<ExperienceListPage> {
   String _query = '';
+  CaseFilters _filters = const CaseFilters();
 
   Future<void> _create() async {
     final id = await showDialog<String>(
@@ -63,9 +68,10 @@ class _ExperienceListPageState extends ConsumerState<ExperienceListPage> {
   }
 
   Widget _list(List<ExperienceCase> records) {
-    final items = records.where(
-      (item) =>
-          '${item.caseNo} ${item.cause} ${item.court}'.contains(_query.trim()),
+    final items = queryExperienceCases(
+      records,
+      keyword: _query,
+      filters: _filters,
     );
     return Center(
       child: ConstrainedBox(
@@ -80,26 +86,30 @@ class _ExperienceListPageState extends ConsumerState<ExperienceListPage> {
               ),
               onChanged: (value) => setState(() => _query = value),
             ),
+            CaseFilterBar(
+              value: _filters,
+              change: (value) => setState(() => _filters = value),
+            ),
             const SizedBox(height: 16),
             if (records.isEmpty) const Text('还没有体验案件，点击“新建案件”开始'),
             if (records.isNotEmpty && items.isEmpty) const Text('没有匹配的体验案件'),
-            for (final item in items)
-              Card(
-                child: ListTile(
-                  title: Text(item.cause),
-                  subtitle: Text(
-                    '${item.caseNo}\n${item.court}\n'
-                    '${item.files.length} 个示例版本 · '
-                    '${item.tasks.where((task) => !task.done).length} 项待办',
-                  ),
-                  isThreeLine: true,
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.go('/experience/${item.id}'),
-                ),
-              ),
+            for (final item in items) _card(item),
           ],
         ),
       ),
     );
   }
+
+  Widget _card(ExperienceCase item) => Card(
+    child: ListTile(
+      title: Text(item.cause),
+      subtitle: Text(
+        '${item.caseNo}\n${item.court} · ${caseStages[item.stage]} · ${caseStatuses[item.status]}\n'
+        '${item.files.length} 个示例版本 · ${item.tasks.where((task) => !task.done).length} 项待办',
+      ),
+      isThreeLine: true,
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => context.go('/experience/${item.id}'),
+    ),
+  );
 }
