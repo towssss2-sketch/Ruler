@@ -31,6 +31,8 @@ class OnlineFixture {
           'id': 'task-${work.length}',
           'title': input['title'],
           'status': 'TODO',
+          'source': 'MANUAL',
+          'description': input['description'],
           'dueDate': input['dueDate'],
         });
         return reply(work.last, 201);
@@ -44,7 +46,7 @@ class OnlineFixture {
         return reply({'deleted': true});
       }
       final item = work.singleWhere((item) => item['id'] == id);
-      item['status'] = input['status'];
+      item.addAll(input);
       return reply(item);
     }
     if (request.path.startsWith('/cases/') &&

@@ -1,5 +1,6 @@
 import 'case_detail.dart';
 import 'case_fields.dart';
+import 'task_fields.dart';
 
 /// 仅用于离线交互体验，不能作为真实案件或上传凭证。
 class ExperienceTask {
@@ -7,10 +8,22 @@ class ExperienceTask {
     required this.id,
     required this.title,
     this.done = false,
+    this.description,
+    this.dueDate,
   });
   final String id;
   final String title;
   final bool done;
+  final String? description, dueDate;
+  TaskFields get fields =>
+      TaskFields(title: title, description: description, dueDate: dueDate);
+  ExperienceTask copyWith({TaskFields? fields, bool? done}) => ExperienceTask(
+    id: id,
+    title: fields?.title ?? title,
+    done: done ?? this.done,
+    description: fields == null ? description : fields.description,
+    dueDate: fields == null ? dueDate : fields.dueDate,
+  );
 }
 
 class ExperienceFile {
@@ -99,6 +112,7 @@ abstract class ExperienceRepository {
   Future<void> saveSupplement(String caseId, CaseSupplement value);
   Future<void> remove(String caseId);
   Future<void> addTask(String caseId, String title);
+  Future<void> updateTask(String caseId, String taskId, TaskFields fields);
   Future<void> toggleTask(String caseId, String taskId);
   Future<void> addSample(String caseId, {String category = 'EVIDENCE'});
   Future<void> removeFile(String caseId, String fileId);

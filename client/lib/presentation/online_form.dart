@@ -4,20 +4,17 @@ import '../domain/case_detail.dart';
 import 'draft_party_button.dart';
 import 'online_widgets.dart';
 
-/// 案件或任务的真实保存表单；服务失败保留输入，不冒充保存成功。
+/// 案件的真实保存表单；服务失败保留输入，不冒充保存成功。
 class OnlineForm extends StatefulWidget {
-  const OnlineForm({required this.repository, this.caseId, super.key});
+  const OnlineForm({required this.repository, super.key});
   final OnlineRepository repository;
-  final String? caseId;
   @override
   State<OnlineForm> createState() => _OnlineFormState();
 }
 
 class _OnlineFormState extends State<OnlineForm> {
   final _form = GlobalKey<FormState>();
-  late final _fields = widget.caseId == null
-      ? ['案号', '案由', '法院', '原告姓名（虚构）']
-      : ['任务标题', '工作日期（可空，YYYY-MM-DD）'];
+  final _fields = ['案号', '案由', '法院', '原告姓名（虚构）'];
   late final _values = List.generate(
     _fields.length,
     (_) => TextEditingController(),
@@ -41,20 +38,12 @@ class _OnlineFormState extends State<OnlineForm> {
     });
     try {
       final values = _values.map((value) => value.text.trim()).toList();
-      if (widget.caseId == null) {
-        await widget.repository.createCaseWithParties(
-          values[0],
-          values[1],
-          values[2],
-          _parties ?? [CaseParty(name: values[3], role: 'PLAINTIFF')],
-        );
-      } else {
-        await widget.repository.addTask(
-          widget.caseId!,
-          values[0],
-          values[1].isEmpty ? null : values[1],
-        );
-      }
+      await widget.repository.createCaseWithParties(
+        values[0],
+        values[1],
+        values[2],
+        _parties ?? [CaseParty(name: values[3], role: 'PLAINTIFF')],
+      );
       if (mounted) Navigator.pop(context, true);
     } catch (error) {
       if (mounted) setState(() => _error = onlineError(error));
@@ -65,16 +54,6 @@ class _OnlineFormState extends State<OnlineForm> {
 
   String? _validate(String? raw, int index) {
     final value = raw?.trim() ?? '';
-    if (widget.caseId != null && index == 1) {
-      if (value.isEmpty) return null;
-      final date = DateTime.tryParse(value);
-      if (!RegExp(r'^[1-9]\d{3}-\d{2}-\d{2}$').hasMatch(value) ||
-          date == null ||
-          date.toIso8601String().substring(0, 10) != value) {
-        return '请输入有效工作日期';
-      }
-      return null;
-    }
     return value.isEmpty ? '请填写${_fields[index]}' : null;
   }
 
@@ -92,27 +71,25 @@ class _OnlineFormState extends State<OnlineForm> {
   Widget build(BuildContext context) => PopScope(
     canPop: !_busy,
     child: AlertDialog(
-      title: Text(widget.caseId == null ? '新建测试案件' : '新增工作任务'),
+      title: const Text('新建测试案件'),
       content: SingleChildScrollView(
         child: Form(
           key: _form,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('仅填写虚构资料；工作日期不代表法定期限。'),
+              const Text('仅填写虚构资料。'),
               for (var i = 0; i < _fields.length; i++)
                 if (i != 3 || _parties == null)
                   TextFormField(
                     controller: _values[i],
                     onChanged: i == 3 ? (_) => setState(() {}) : null,
                     enabled: !_busy,
-                    maxLength: widget.caseId == null
-                        ? (i == 0 ? 80 : 128)
-                        : (i == 0 ? 255 : 10),
+                    maxLength: i == 0 ? 80 : 128,
                     decoration: InputDecoration(labelText: _fields[i]),
                     validator: (value) => _validate(value, i),
                   ),
-              if (widget.caseId == null) _draftButton(),
+              _draftButton(),
               if (_error != null) Text(_error!),
             ],
           ),

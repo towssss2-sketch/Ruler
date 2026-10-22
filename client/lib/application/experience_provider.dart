@@ -1,5 +1,6 @@
 import '../domain/case_detail.dart';
 import '../domain/case_fields.dart';
+import '../domain/task_fields.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/experience.dart';
 import '../infrastructure/memory_experience.dart';
@@ -66,6 +67,15 @@ class ExperienceController extends AsyncNotifier<List<ExperienceCase>> {
 
   Future<void> toggleTask(String caseId, String taskId) async {
     await _repository.toggleTask(caseId, taskId);
+    await _refresh();
+  }
+
+  Future<void> updateTask(
+    String caseId,
+    String taskId,
+    TaskFields fields,
+  ) async {
+    await _repository.updateTask(caseId, taskId, fields);
     await _refresh();
   }
 

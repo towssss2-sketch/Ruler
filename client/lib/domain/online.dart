@@ -2,6 +2,7 @@ import 'case_detail.dart';
 import 'case_conflict.dart';
 import 'case_fields.dart';
 import 'case_filters.dart';
+import 'task_fields.dart';
 
 /// 仅含可显示的固定提示，禁止传入原始响应、凭据或网络异常。
 class ApiFailure implements Exception {
@@ -39,11 +40,20 @@ class OnlineCase {
 
 /// 常规工作任务；日期不等于经律师确认的法定期间。
 class OnlineTask {
-  const OnlineTask(this.id, this.title, this.done, this.dueDate);
+  const OnlineTask(
+    this.id,
+    this.title,
+    this.done,
+    this.dueDate, {
+    this.description,
+  });
   final String id;
   final String title;
   final bool done;
   final String? dueDate;
+  final String? description;
+  TaskFields get fields =>
+      TaskFields(title: title, description: description, dueDate: dueDate);
 }
 
 /// 显式分页，避免只展示第一页却暗示已经读完。
@@ -82,7 +92,13 @@ abstract interface class OnlineRepository {
   Future<void> saveSupplement(String id, CaseSupplement value);
   Future<void> removeCase(String id);
   Future<OnlinePage<OnlineTask>> tasks(String caseId, {int page = 1});
-  Future<void> addTask(String caseId, String title, String? dueDate);
+  Future<void> addTask(
+    String caseId,
+    String title,
+    String? dueDate, {
+    String? description,
+  });
+  Future<void> updateTask(String id, TaskFields fields);
   Future<void> setTaskDone(String id, bool done);
   Future<void> removeTask(String id);
 }

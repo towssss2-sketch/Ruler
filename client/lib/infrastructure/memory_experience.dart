@@ -2,6 +2,7 @@ import '../domain/case_detail.dart';
 import '../domain/case_fields.dart';
 import '../domain/experience.dart';
 import '../domain/documents.dart';
+import '../domain/task_fields.dart';
 
 /// 只保存本进程的虚构体验数据；无网络、磁盘和真实验证码。
 class MemoryExperience implements ExperienceRepository {
@@ -126,15 +127,37 @@ class MemoryExperience implements ExperienceRepository {
 
   @override
   Future<void> addTask(String caseId, String title) async {
-    if (title.trim().isEmpty || title.trim().length > 255) {
-      throw const ExperienceFailure('请填写 1–255 字的任务标题');
-    }
+    final fields = TaskFields(title: title);
+    if (fields.error != null) throw ExperienceFailure(fields.error!);
     final record = _record(caseId);
     _cases[caseId] = record.copyWith(
       tasks: [
         ...record.tasks,
         ExperienceTask(id: 'demo-${++_sequence}', title: title.trim()),
       ],
+    );
+  }
+
+  /// 只编辑本案任务资料，保留状态、身份、其他任务及案件更新时间。
+  @override
+  Future<void> updateTask(
+    String caseId,
+    String taskId,
+    TaskFields fields,
+  ) async {
+    final record = _record(caseId);
+    if (!record.tasks.any((task) => task.id == taskId)) {
+      throw const ExperienceFailure('体验任务不存在');
+    }
+    if (fields.error != null) throw ExperienceFailure(fields.error!);
+    _cases[caseId] = record.copyWith(
+      tasks: record.tasks
+          .map(
+            (task) => task.id == taskId
+                ? task.copyWith(fields: fields.normalized)
+                : task,
+          )
+          .toList(),
     );
   }
 
@@ -147,13 +170,8 @@ class MemoryExperience implements ExperienceRepository {
     _cases[caseId] = record.copyWith(
       tasks: record.tasks
           .map(
-            (task) => task.id == taskId
-                ? ExperienceTask(
-                    id: task.id,
-                    title: task.title,
-                    done: !task.done,
-                  )
-                : task,
+            (task) =>
+                task.id == taskId ? task.copyWith(done: !task.done) : task,
           )
           .toList(),
     );
