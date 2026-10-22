@@ -114,6 +114,7 @@ abstract class ExperienceRepository {
   Future<void> addTask(String caseId, String title);
   Future<void> updateTask(String caseId, String taskId, TaskFields fields);
   Future<void> toggleTask(String caseId, String taskId);
+  Future<void> completeTask(String caseId, String taskId);
   Future<void> addSample(String caseId, {String category = 'EVIDENCE'});
   Future<void> removeFile(String caseId, String fileId);
 }

@@ -15,7 +15,7 @@ OnlineTask readManualTask(Map<String, Object?> value) {
   final fields = TaskFields(
     title: jsonText(value, 'title'),
     description: description as String?,
-    dueDate: _workDate(rawDate),
+    dueDate: readWorkDate(rawDate),
   );
   if (fields.error != null) throw const ApiFailure('服务响应格式异常。');
   return OnlineTask(
@@ -27,7 +27,7 @@ OnlineTask readManualTask(Map<String, Object?> value) {
   );
 }
 
-String? _workDate(Object? raw) {
+String? readWorkDate(Object? raw) {
   if (raw == null) return null;
   if (raw is! String ||
       !RegExp(r'^[1-9]\d{3}-\d{2}-\d{2}(T00:00:00\.000Z)?$').hasMatch(raw) ||

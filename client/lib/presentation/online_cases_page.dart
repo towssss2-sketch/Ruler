@@ -6,6 +6,7 @@ import '../domain/online.dart';
 import 'online_form.dart';
 import 'online_tasks_page.dart';
 import 'online_widgets.dart';
+import 'today_entry.dart';
 
 /// 当前账号的服务端案件列表，搜索和分页均由接口执行。
 class OnlineCasesPage extends StatefulWidget {
@@ -76,7 +77,14 @@ class _OnlineCasesPageState extends State<OnlineCasesPage> {
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
       title: const Text('我的测试案件'),
-      actions: [OnlineAction(label: '退出登录', run: widget.logout)],
+      actions: [
+        IconButton(
+          tooltip: '今日任务',
+          icon: const Icon(Icons.today),
+          onPressed: () => openOnlineToday(context, widget.repository),
+        ),
+        OnlineAction(label: '退出登录', run: widget.logout),
+      ],
     ),
     body: SafeArea(
       child: Column(
