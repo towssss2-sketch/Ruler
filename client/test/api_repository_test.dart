@@ -19,6 +19,7 @@ void main() {
                   'id': 'task-1',
                   'title': '虚构任务',
                   'status': 'TODO',
+                  'source': 'MANUAL',
                   'dueDate': invalid,
                 },
               ],

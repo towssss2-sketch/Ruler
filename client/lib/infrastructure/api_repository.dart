@@ -6,6 +6,8 @@ import '../domain/case_fields.dart';
 import '../domain/case_filters.dart';
 import '../domain/online.dart';
 import 'api_session.dart';
+import '../domain/task_fields.dart';
+import 'task_wire.dart';
 
 /// 真实 REST 仓库；每次查询服务端，关闭客户端不清除已保存案件。
 class ApiRepository implements OnlineRepository {
@@ -133,15 +135,37 @@ class ApiRepository implements OnlineRepository {
       '/cases/${Uri.encodeComponent(caseId)}/tasks',
       query: {'source': 'MANUAL', 'page': page, 'pageSize': 20},
     );
-    return _page(result, _task);
+    return _page(result, readManualTask);
   }
 
   @override
-  Future<void> addTask(String caseId, String title, String? dueDate) async {
+  Future<void> addTask(
+    String caseId,
+    String title,
+    String? dueDate, {
+    String? description,
+  }) async {
+    final fields = TaskFields(
+      title: title,
+      dueDate: dueDate,
+      description: description,
+    );
+    if (fields.error != null) throw ApiFailure(fields.error!);
     await session.request(
       'POST',
       '/cases/${Uri.encodeComponent(caseId)}/tasks',
-      data: {'title': title, 'dueDate': dueDate},
+      data: fields.normalized.toJson(),
+    );
+  }
+
+  /// 保存手动任务三项资料；不携带状态/来源/确认字段，授权由服务端实时裁决。
+  @override
+  Future<void> updateTask(String id, TaskFields fields) async {
+    if (fields.error != null) throw ApiFailure(fields.error!);
+    await session.request(
+      'PATCH',
+      '/tasks/${Uri.encodeComponent(id)}',
+      data: fields.normalized.toJson(),
     );
   }
 
@@ -174,31 +198,6 @@ OnlineCase _case(Map<String, Object?> value) {
     stage: stage,
     status: status,
   );
-}
-
-OnlineTask _task(Map<String, Object?> value) {
-  final status = value['status'];
-  final date = value['dueDate'];
-  if (!['TODO', 'DONE'].contains(status) ||
-      (date != null && !_validDate(date))) {
-    throw const ApiFailure('服务响应格式异常。');
-  }
-  return OnlineTask(
-    jsonText(value, 'id'),
-    jsonText(value, 'title'),
-    status == 'DONE',
-    date == null ? null : (date as String).substring(0, 10),
-  );
-}
-
-bool _validDate(Object value) {
-  if (value is! String ||
-      !RegExp(r'^[1-9]\d{3}-\d{2}-\d{2}(T.*)?$').hasMatch(value)) {
-    return false;
-  }
-  final date = DateTime.tryParse(value);
-  return date != null &&
-      date.toIso8601String().substring(0, 10) == value.substring(0, 10);
 }
 
 OnlinePage<T> _page<T>(Object? result, T Function(Map<String, Object?>) parse) {

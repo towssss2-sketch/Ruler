@@ -3,6 +3,7 @@ import 'package:ruler_client/domain/case_filters.dart';
 import 'case_conflict_e2e.dart';
 import 'case_edit_e2e.dart';
 import 'case_supplement_e2e.dart';
+import 'task_edit_e2e.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:dio/dio.dart';
@@ -97,17 +98,31 @@ void writeResult(bool verifiedTls) {
 
 /// 真实创建、完成、恢复、删除工作任务。
 Future<void> tasks(ApiRepository repository, OnlineCase item) async {
-  await repository.addTask(item.id, '虚构材料核对', '2026-10-20');
+  await repository.addTask(
+    item.id,
+    '虚构材料核对',
+    '2026-10-20',
+    description: '虚构初始描述',
+  );
   final task = (await repository.tasks(item.id)).items.single;
   check(task.dueDate == '2026-10-20' && !task.done);
+  check(task.description == '虚构初始描述');
   await repository.setTaskDone(task.id, true);
-  check((await repository.tasks(item.id)).items.single.done);
+  await editCompletedTask(repository, task.id);
+  verifyEditedTask((await repository.tasks(item.id)).items.single);
   await repository.setTaskDone(task.id, false);
-  check(!(await repository.tasks(item.id)).items.single.done);
+  await clearTask(repository, task.id);
+  verifyClearedTask((await repository.tasks(item.id)).items.single);
   await repository.removeTask(task.id);
   check((await repository.tasks(item.id)).total == 0);
-  await repository.addTask(item.id, '虚构持久化任务', null);
+  await repository.addTask(
+    item.id,
+    '虚构持久化任务',
+    '2028-02-29',
+    description: '虚构持久化描述',
+  );
   _scenarios.add('真实任务创建、日期、完成、恢复和删除');
+  _scenarios.add('真实任务标题描述日期编辑、状态保留、清空、重登和越权拒绝');
 }
 
 /// 新客户端实例重新登录后读到数据库保存的案件与任务。
@@ -124,7 +139,7 @@ Future<void> persistence(
     check((await repository.cases()).items.single.id == item.id);
     await verifyEditedCase(repository, item.id);
     await verifyPartyPersistence(repository, item.id);
-    check((await repository.tasks(item.id)).items.single.title == '虚构持久化任务');
+    await verifyTaskPersistence(repository, item.id);
     _scenarios.add('销毁客户端后重新登录，案件和任务仍保留');
     await session.logout();
   } finally {
@@ -148,6 +163,7 @@ Future<void> isolation(ApiSession session, OnlineCase item) async {
   );
   await partyIsolation(repository, item.id);
   await conflictIsolation(repository, item.id);
+  await taskEditIsolation(repository);
   await forbidden(() => repository.saveSupplement(item.id, editedSupplement));
   await forbidden(() async {
     await repository.tasks(item.id);

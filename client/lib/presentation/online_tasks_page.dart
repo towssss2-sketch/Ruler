@@ -3,7 +3,8 @@ import '../domain/case_fields.dart';
 import 'case_edit_dialog.dart';
 import 'package:flutter/material.dart';
 import '../domain/online.dart';
-import 'online_form.dart';
+import 'task_editor.dart';
+import '../domain/task_fields.dart';
 import 'online_widgets.dart';
 import 'online_documents_page.dart';
 
@@ -23,13 +24,17 @@ class OnlineTasksPage extends StatefulWidget {
 class _OnlineTasksPageState extends State<OnlineTasksPage> {
   late OnlineCase _item = widget.item;
   int _page = 1;
-  late Future<OnlinePage<OnlineTask>> _result = widget.repository.tasks(
-    _item.id,
-  );
+  late Future<OnlinePage<OnlineTask>> _result = _read();
+
+  Future<OnlinePage<OnlineTask>> _read() {
+    final result = widget.repository.tasks(_item.id, page: _page);
+    result.ignore();
+    return result;
+  }
 
   void _load([int? page]) => setState(() {
     _page = page ?? _page;
-    _result = widget.repository.tasks(_item.id, page: _page);
+    _result = _read();
   });
 
   Future<void> _add() async {
@@ -37,10 +42,32 @@ class _OnlineTasksPageState extends State<OnlineTasksPage> {
       context: context,
       useRootNavigator: false,
       barrierDismissible: false,
-      builder: (context) =>
-          OnlineForm(repository: widget.repository, caseId: _item.id),
+      builder: (context) => TaskEditor(
+        creating: true,
+        initial: const TaskFields(title: ''),
+        save: (fields) => widget.repository.addTask(
+          _item.id,
+          fields.title,
+          fields.dueDate,
+          description: fields.description,
+        ),
+      ),
     );
     if (saved == true && mounted) _load(1);
+  }
+
+  Future<void> _editTask(OnlineTask task) async {
+    final saved = await showDialog<bool>(
+      context: context,
+      useRootNavigator: false,
+      barrierDismissible: false,
+      builder: (_) => TaskEditor(
+        initial: task.fields,
+        save: (fields) => widget.repository.updateTask(task.id, fields),
+      ),
+    );
+    // 改日期可能改变服务端排序；重读当前页，不在客户端伪造分页结果。
+    if (saved == true && mounted) _load();
   }
 
   Future<void> _edit() async {
@@ -141,51 +168,42 @@ class _OnlineTasksPageState extends State<OnlineTasksPage> {
       Expanded(
         child: result.items.isEmpty
             ? const Center(child: Text('暂无常规工作任务'))
-            : ListView(
-                children: result.items
-                    .map(
-                      (task) => Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                task.title,
-                                style: Theme.of(context).textTheme.titleMedium,
-                              ),
-                              Text(
-                                '${task.done ? '已完成' : '待办'} · ${task.dueDate ?? '未设工作日期'}',
-                              ),
-                              Wrap(
-                                spacing: 8,
-                                children: [
-                                  OnlineAction(
-                                    key: ValueKey('${task.id}-${task.done}'),
-                                    label: task.done ? '恢复待办' : '标记完成',
-                                    run: () async {
-                                      await widget.repository.setTaskDone(
-                                        task.id,
-                                        !task.done,
-                                      );
-                                      if (mounted) _load();
-                                    },
-                                  ),
-                                  OnlineAction(
-                                    label: '删除任务',
-                                    run: () => _deleteTask(task),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    )
-                    .toList(),
-              ),
+            : ListView(children: result.items.map(_task).toList()),
       ),
       onlinePagination(result, _load),
     ],
+  );
+
+  Widget _task(OnlineTask task) => Card(
+    child: Padding(
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(task.title, style: Theme.of(context).textTheme.titleMedium),
+          Text('${task.done ? '已完成' : '待办'} · ${task.dueDate ?? '未设工作日期'}'),
+          Text(
+            '描述：${task.description ?? '未填写'}',
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+          ),
+          Wrap(
+            spacing: 8,
+            children: [
+              OnlineAction(label: '编辑任务', run: () => _editTask(task)),
+              OnlineAction(
+                key: ValueKey('${task.id}-${task.done}'),
+                label: task.done ? '恢复待办' : '标记完成',
+                run: () async {
+                  await widget.repository.setTaskDone(task.id, !task.done);
+                  if (mounted) _load();
+                },
+              ),
+              OnlineAction(label: '删除任务', run: () => _deleteTask(task)),
+            ],
+          ),
+        ],
+      ),
+    ),
   );
 }
