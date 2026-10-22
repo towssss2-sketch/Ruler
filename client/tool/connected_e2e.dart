@@ -64,6 +64,8 @@ Future<void> runScenarios(bool verifiedTls) async {
     await conflictScenario(repository);
     _scenarios.add('真实多人建案与历史相似姓名检查、删除记录、分页和候选去重');
     _scenarios.add('真实法院阶段状态组合筛选、关键词分页与修改后更新时间排序');
+    // 全套真实联调已超过同源每分钟 120 次预算；自然等待新窗口，不修改限流或清空 Redis。
+    await Future<void>.delayed(const Duration(seconds: 61));
     await first.logout();
     await persistence(origin, emails[0], password, item);
     await second.login(emails[1], password);
@@ -98,21 +100,27 @@ void writeResult(bool verifiedTls) {
 
 /// 真实创建、完成、恢复、删除工作任务。
 Future<void> tasks(ApiRepository repository, OnlineCase item) async {
+  final initialToday = await repository.today();
+  check(initialToday.total == 0);
   await repository.addTask(
     item.id,
     '虚构材料核对',
-    '2026-10-20',
+    initialToday.date,
     description: '虚构初始描述',
   );
-  final task = (await repository.tasks(item.id)).items.single;
-  check(task.dueDate == '2026-10-20' && !task.done);
+  final task = (await repository.today()).items.single;
+  check(task.dueDate == initialToday.date && task.caseId == item.id);
+  check(task.source == 'MANUAL');
+  check(task.caseLabel == '${item.caseNo} · ${item.court}');
   check(task.description == '虚构初始描述');
   await repository.setTaskDone(task.id, true);
   await editCompletedTask(repository, task.id);
   verifyEditedTask((await repository.tasks(item.id)).items.single);
+  check((await repository.today()).total == 0);
   await repository.setTaskDone(task.id, false);
   await clearTask(repository, task.id);
   verifyClearedTask((await repository.tasks(item.id)).items.single);
+  check((await repository.today()).total == 0);
   await repository.removeTask(task.id);
   check((await repository.tasks(item.id)).total == 0);
   await repository.addTask(
@@ -123,6 +131,7 @@ Future<void> tasks(ApiRepository repository, OnlineCase item) async {
   );
   _scenarios.add('真实任务创建、日期、完成、恢复和删除');
   _scenarios.add('真实任务标题描述日期编辑、状态保留、清空、重登和越权拒绝');
+  _scenarios.add('真实今日汇总日期、任务资料、完成移出、无日期排除及账号隔离');
 }
 
 /// 新客户端实例重新登录后读到数据库保存的案件与任务。
@@ -150,6 +159,7 @@ Future<void> persistence(
 /// 另一个真实账号不能读写他人案件或任务。
 Future<void> isolation(ApiSession session, OnlineCase item) async {
   final repository = ApiRepository(session);
+  check((await repository.today()).total == 0);
   check((await repository.cases()).total == 0);
   check(
     (await repository.cases(

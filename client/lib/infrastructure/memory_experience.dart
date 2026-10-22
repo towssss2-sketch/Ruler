@@ -162,6 +162,19 @@ class MemoryExperience implements ExperienceRepository {
   }
 
   @override
+  Future<void> completeTask(String caseId, String taskId) async {
+    final record = _record(caseId);
+    if (!record.tasks.any((task) => task.id == taskId)) {
+      throw const ExperienceFailure('体验任务不存在');
+    }
+    _cases[caseId] = record.copyWith(
+      tasks: record.tasks
+          .map((task) => task.id == taskId ? task.copyWith(done: true) : task)
+          .toList(),
+    );
+  }
+
+  @override
   Future<void> toggleTask(String caseId, String taskId) async {
     final record = _record(caseId);
     if (!record.tasks.any((task) => task.id == taskId)) {

@@ -8,11 +8,24 @@ import '../domain/online.dart';
 import 'api_session.dart';
 import '../domain/task_fields.dart';
 import 'task_wire.dart';
+import '../domain/today.dart';
+import 'today_wire.dart';
 
 /// 真实 REST 仓库；每次查询服务端，关闭客户端不清除已保存案件。
 class ApiRepository implements OnlineRepository {
   ApiRepository(this.session);
   final ApiSession session;
+
+  /// 今日按服务端北京时间、优先级与全量分页读取，不传用户或案件范围。
+  @override
+  Future<TodaySnapshot> today({int page = 1}) async => readToday(
+    await session.request(
+      'GET',
+      '/tasks/today',
+      query: {'page': page, 'pageSize': 20},
+    ),
+    page,
+  );
 
   @override
   Future<OnlinePage<OnlineCase>> cases({

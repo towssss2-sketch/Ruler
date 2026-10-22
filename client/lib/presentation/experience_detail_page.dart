@@ -12,14 +12,15 @@ import 'experience_task_panel.dart';
 import 'experience_widgets.dart';
 
 class ExperienceDetailPage extends ConsumerWidget {
-  const ExperienceDetailPage({required this.caseId, super.key});
+  const ExperienceDetailPage({required this.caseId, this.onBack, super.key});
   final String caseId;
+  final VoidCallback? onBack;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) => Scaffold(
     appBar: AppBar(
       title: const Text('体验案件详情'),
-      leading: BackButton(onPressed: () => context.go('/experience')),
+      leading: BackButton(onPressed: onBack ?? () => context.go('/experience')),
     ),
     body: Column(
       children: [
@@ -129,7 +130,13 @@ class ExperienceDetailPage extends ConsumerWidget {
     );
     if (confirmed != true) return;
     await ref.read(experienceProvider.notifier).remove(id);
-    if (context.mounted) context.go('/experience');
+    if (context.mounted) {
+      if (onBack != null) {
+        onBack!();
+      } else {
+        context.go('/experience');
+      }
+    }
   }
 
   Widget _summary(BuildContext context, WidgetRef ref, ExperienceCase record) =>

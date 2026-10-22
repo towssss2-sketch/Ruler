@@ -9,7 +9,8 @@ import { compareTasks, deadlineWindow, todayDate } from './task-policy';
 import { TaskView, TaskViewService } from './task-view.service';
 
 export interface TaskPage { items: TaskView[]; total: number; page: number; pageSize: number }
-export interface TodayPage extends TaskPage { date: string; timeZone: 'Asia/Shanghai' }
+export type TodayTaskView = TaskView & { caseNo: string; court: string };
+export interface TodayPage extends TaskPage { items: TodayTaskView[]; date: string; timeZone: 'Asia/Shanghai' }
 
 @Injectable()
 export class TaskReadService {
@@ -35,13 +36,17 @@ export class TaskReadService {
       const records = await tx.task.findMany({ where: { deletedAt: null, status: 'TODO',
         case: { ownerId: userId, deletedAt: null }, OR: [{ source: { not: 'DEADLINE_RULE' }, dueDate: { lte: today } },
           { source: 'DEADLINE_RULE', deadlineConfirmedAt: { not: null }, deadlineConfirmedById: { not: null },
-            dueDate: { lte: new Date(today.getTime() + 3650 * 86400000) } }] }, take: 5001 });
+            dueDate: { lte: new Date(today.getTime() + 3650 * 86400000) } }] }, take: 5001,
+        include: { case: { select: { caseNo: true, court: true } } } });
       // 不悄悄截断优先级结果；超出处理预算明确失败，后续可改为专用数据库视图。
       if (records.length > 5000) throw new BizException(40912, '今日任务候选过多，请先按案件处理', 409);
       const selected = records.filter((record): boolean => record.source !== 'DEADLINE_RULE' || deadlineWindow(record, today))
         .sort((left, right): number => compareTasks(today, left, right));
       const page = Number(query.page); const pageSize = Number(query.pageSize);
-      return { items: selected.slice((page - 1) * pageSize, page * pageSize).map((record): TaskView => this.view.view(record)),
+      return { items: selected.slice((page - 1) * pageSize, page * pageSize).map((record): TodayTaskView => {
+        const { case: parent, ...task } = record;
+        return { ...this.view.view(task), caseNo: parent.caseNo, court: parent.court };
+      }),
         total: selected.length, page, pageSize, date: today.toISOString().slice(0, 10), timeZone: 'Asia/Shanghai' };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead });
   }

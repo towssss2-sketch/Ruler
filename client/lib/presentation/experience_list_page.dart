@@ -9,6 +9,7 @@ import '../infrastructure/experience_query.dart';
 import 'case_filter_bar.dart';
 import 'experience_case_form.dart';
 import 'experience_widgets.dart';
+import 'today_entry.dart';
 
 class ExperienceListPage extends ConsumerStatefulWidget {
   const ExperienceListPage({super.key});
@@ -38,6 +39,11 @@ class _ExperienceListPageState extends ConsumerState<ExperienceListPage> {
         title: const Text('我的体验案件'),
         leading: BackButton(onPressed: () => context.go('/')),
         actions: [
+          IconButton(
+            tooltip: '今日任务',
+            icon: const Icon(Icons.today),
+            onPressed: () => openExperienceToday(context, ref),
+          ),
           IconButton(
             tooltip: '刷新体验列表',
             onPressed: () => ref.read(experienceProvider.notifier).reload(),
