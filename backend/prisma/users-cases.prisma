@@ -32,6 +32,7 @@ model User {
   authSessions       AuthSession[]
   ownedUploads       DocumentUpload[] @relation("UploadOwner")
   performedUploads   DocumentUpload[] @relation("UploadActor")
+  ingestionUploads   IngestionUpload[]
 }
 
 model Case {

@@ -24,7 +24,8 @@ export async function storageOperation<T>(operation: () => Promise<T>): Promise<
 }
 
 /** 仅单段直传；真实元数据及协议摘要必须和票据一致，不信任前端登记值。 */
-export function verifyObject(ticket: DocumentUpload, object: StoredObject | null): asserts object is StoredObject {
+export function verifyObject(ticket: Pick<DocumentUpload, 'contentMd5' | 'sizeBytes' | 'mimeType'>,
+  object: StoredObject | null): asserts object is StoredObject {
   const digest = Buffer.from(ticket.contentMd5, 'base64').toString('hex');
   if (!object || BigInt(object.sizeBytes) !== ticket.sizeBytes || object.mimeType !== ticket.mimeType
     || object.etag.replaceAll('"', '').toLowerCase() !== digest) {

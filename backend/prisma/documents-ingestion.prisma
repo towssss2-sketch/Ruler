@@ -57,7 +57,10 @@ model IngestionRecord {
   user      User       @relation(fields: [userId], references: [id], onDelete: Restrict)
   case      Case?      @relation(fields: [matchedCaseId], references: [id], onDelete: Restrict)
   documents Document[]
+  uploads   IngestionUpload[]
+  file      IngestionFile?
 
+  @@unique([id, userId])
   @@unique([userId, channel, contentHash])
   @@index([userId, status, receivedAt])
   @@index([stage, nextRetryAt])

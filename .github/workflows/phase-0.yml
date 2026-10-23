@@ -104,6 +104,14 @@ jobs:
             test-results/document-acceptance.html
           if-no-files-found: error
           retention-days: 14
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ruler-ingestion-file-validation
+          path: |
+            test-results/ingestion-file-validation.json
+            test-results/ingestion-file-acceptance.html
+          if-no-files-found: error
+          retention-days: 14
       - name: 空库、阶段0升级及数据库安全约束
         working-directory: backend
         run: npm run test:database

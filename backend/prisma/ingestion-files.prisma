@@ -1,0 +1,40 @@
+// 用户级上传票据。未选案件前不能写入 Document；签名不入库。
+model IngestionUpload {
+  id           String    @id @default(uuid()) @db.Uuid
+  userId       String    @db.Uuid
+  fileName     String    @db.VarChar(255)
+  mimeType     String    @db.VarChar(128)
+  sizeBytes    BigInt
+  contentMd5   String    @db.VarChar(24)
+  pendingKey   String    @unique @db.Text
+  storageKey   String    @unique @db.Text
+  ingestionId  String?   @db.Uuid
+  expiresAt    DateTime  @db.Timestamptz(3)
+  completedAt  DateTime? @db.Timestamptz(3)
+  cleanedAt    DateTime? @db.Timestamptz(3)
+  createdAt    DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime  @updatedAt @db.Timestamptz(3)
+
+  user      User             @relation(fields: [userId], references: [id], onDelete: Restrict)
+  ingestion IngestionRecord? @relation(fields: [ingestionId, userId], references: [id, userId], onDelete: Restrict)
+
+  @@index([userId, expiresAt])
+  @@index([cleanedAt, expiresAt])
+}
+
+// 已接收的原始附件，与归集记录同用户；保留文件占配额，不提供物理删除接口。
+model IngestionFile {
+  id          String   @id @default(uuid()) @db.Uuid
+  ingestionId String   @unique @db.Uuid
+  userId      String   @db.Uuid
+  fileName    String   @db.VarChar(255)
+  mimeType    String   @db.VarChar(128)
+  sizeBytes   BigInt
+  storageKey  String   @unique @db.Text
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+
+  ingestion IngestionRecord @relation(fields: [ingestionId, userId], references: [id, userId], onDelete: Restrict)
+
+  @@unique([ingestionId, userId])
+}

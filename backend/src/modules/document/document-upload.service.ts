@@ -3,8 +3,9 @@ import { randomUUID } from 'node:crypto';
 import { DocumentUpload, Prisma } from '@prisma/client';
 import { PrismaRepository } from '../../prisma.repository';
 import { BizException } from '../../biz-exception';
+import { reserveUpload } from './upload-reservation';
 import { PresignInput } from './document-input';
-import { auditDocument, checkQuota, storageOperation } from './document-policy';
+import { auditDocument, storageOperation } from './document-policy';
 import { activeDocument, lockDocumentOwner, validateOrigin } from './document-transaction';
 import { StorageService, SignedTransfer } from './storage/storage.service';
 import { sanitizeFileName, storageKey, uploadHeaders } from './storage/storage-policy';
@@ -24,7 +25,7 @@ export class DocumentUploadService {
       return this.repository.db.$transaction(async (tx): Promise<UploadOffer> => {
         const owner = await lockDocumentOwner(tx, userId, caseId);
         await validateOrigin(tx, userId, caseId, origin.source, origin.ingestionId);
-        await this.reserveQuota(tx, owner, input.sizeBytes);
+        await reserveUpload(tx, owner, input.sizeBytes);
         const series = await this.nextVersion(tx, caseId, input.previousDocumentId);
         const documentId = randomUUID();
         const pendingKey = storageKey(owner.id, caseId, randomUUID(), 1, fileName);
@@ -39,14 +40,6 @@ export class DocumentUploadService {
         return { ...signed, uploadId: ticket.id, fileName, version: series.version };
       });
     });
-  }
-
-  private async reserveQuota(tx: Prisma.TransactionClient, owner: { id: string; storageUsedBytes: bigint; storageQuotaBytes: bigint },
-    size: number): Promise<void> {
-    const pending = await tx.documentUpload.aggregate({ where: { ownerId: owner.id, completedAt: null,
-      expiresAt: { gt: new Date() } }, _sum: { sizeBytes: true }, _count: true });
-    if (pending._count >= 20) throw new BizException(42904, '未完成上传过多，请完成或等待票据过期', 429);
-    checkQuota(owner.storageUsedBytes + (pending._sum.sizeBytes ?? 0n), BigInt(size), owner.storageQuotaBytes);
   }
 
   private async nextVersion(tx: Prisma.TransactionClient, caseId: string, previousId?: string): Promise<{ versionGroupId: string; version: number }> {
