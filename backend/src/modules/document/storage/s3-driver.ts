@@ -5,6 +5,7 @@ import { MinioConfig } from './storage-config';
 import { StorageError, storageErrorCode } from './storage-error';
 import { downloadDisposition, objectMetadata, uploadHeaders, validateCopy, validateKey, validateTtl } from './storage-policy';
 import { SignedTransfer, StorageService, StoredObject, UploadRequest } from './storage.service';
+import { hashObjectStream, validateFingerprint } from './object-fingerprint';
 
 /** MinIO 开发驱动：所有 SDK 调用留在适配器中，不将供应商响应或异常返回业务层。 */
 export class S3Driver extends StorageService {
@@ -77,6 +78,15 @@ export class S3Driver extends StorageService {
       catch { throw new StorageError('UNAVAILABLE'); }
       return null;
     }
+  }
+
+  /** 走内部连接读取指定对象流，IfMatch 防止读取到检查后更换的对象。 */
+  async fingerprint(key: string, sizeBytes: number, etag: string): Promise<string> {
+    validateFingerprint(key, sizeBytes, etag);
+    try {
+      const result = await this.client.send(new GetObjectCommand({ Bucket: this.config.bucket, Key: key, IfMatch: etag }));
+      return await hashObjectStream(result.Body, sizeBytes);
+    } catch { throw new StorageError('UNAVAILABLE'); }
   }
 
   /** 释放 SDK 连接池；不会删除任何文件。 */

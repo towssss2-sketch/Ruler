@@ -5,7 +5,7 @@ import { PageInput } from '../case/case-input';
 import { MAX_FILE_BYTES } from './storage/storage-policy';
 
 /** 新文件或新版本的上传申请；不接收客户端对象键、所有者或版本号。 */
-export class PresignInput {
+export class FileUploadInput {
   @ApiProperty({ description: '文件名，后端安全化处理；仅允许六类文件的扩展名' })
   @IsString() @Length(1, 512) fileName!: string;
   @ApiProperty({ description: 'application/pdf、application/msword、DOCX MIME、image/jpeg、image/png 或 video/mp4' })
@@ -14,6 +14,8 @@ export class PresignInput {
   @IsInt() @Min(1) @Max(MAX_FILE_BYTES) sizeBytes!: number;
   @ApiProperty({ description: '文件协议 MD5 校验值，标准 Base64；不是用户身份或文件安全证明' })
   @IsString() @Matches(/^[A-Za-z0-9+/]{22}==$/) contentMd5!: string;
+}
+export class PresignInput extends FileUploadInput {
   @ApiPropertyOptional({ format: 'uuid', description: '同案件已有未删除文件 ID；省略创建独立文件' })
   @ValidateIf((_, value: unknown): boolean => value !== undefined) @IsUUID() previousDocumentId?: string;
 }

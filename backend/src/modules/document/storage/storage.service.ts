@@ -16,6 +16,8 @@ export abstract class StorageService {
   abstract exists(key: string): Promise<boolean>;
   /** 读取实际对象元数据用于后续登记校验；仅对象不存在时返回 null。 */
   abstract stat(key: string): Promise<StoredObject | null>;
+  /** 从内部对象流计算 SHA-256，绑定长度及 ETag，不信任客户端提交的内容指纹。 */
+  abstract fingerprint(key: string, sizeBytes: number, etag: string): Promise<string>;
   /** 释放本实例连接资源，不能影响其他驱动实例。 */
   abstract close(): void;
 }

@@ -32,11 +32,23 @@ export function storageKey(ownerId: string, caseId: string, documentId: string, 
 export function validateKey(key: string): void {
   if (typeof key !== 'string') throw new StorageError('INVALID_INPUT');
   const parts = key.split('/');
+  if (parts.length === 5 && parts[1] === 'ingestion') {
+    if (ingestionStorageKey(parts[0]!, parts[2]!, parts[3]!, parts[4]!.replace(/^1_/, '')) !== key) {
+      throw new StorageError('INVALID_INPUT');
+    }
+    return;
+  }
   if (parts.length !== 4) throw new StorageError('INVALID_INPUT');
   const match = /^([1-9]\d*)_(.+)$/.exec(parts[3]!);
   if (!match || storageKey(parts[0]!, parts[1]!, parts[2]!, Number(match[1]), match[2]!) !== key) {
     throw new StorageError('INVALID_INPUT');
   }
+}
+
+/** 未选案件时使用独立的用户/归集命名空间，不伪造案件 UUID。 */
+export function ingestionStorageKey(userId: string, batchId: string, objectId: string, fileName: string): string {
+  if (![userId, batchId, objectId].every((id): boolean => uuid.safeParse(id).success)) throw new StorageError('INVALID_INPUT');
+  return `${userId}/ingestion/${batchId}/${objectId}/1_${sanitizeFileName(fileName)}`;
 }
 
 /** 上传只允许指定六类 MIME，长度至多 200 MiB，校验值必须是规范 Base64 MD5。 */
@@ -54,7 +66,7 @@ export function uploadHeaders(input: UploadRequest): Record<string, string> {
 /** 下载强制附件并禁止共享缓存；名称经规范化后按 RFC 5987 编码。 */
 export function downloadDisposition(key: string): string {
   validateKey(key);
-  const name = key.split('/')[3]!.replace(/^\d+_/, '');
+  const name = key.split('/').at(-1)!.replace(/^\d+_/, '');
   return `attachment; filename="download"; filename*=UTF-8''${encodeURIComponent(name)}`;
 }
 

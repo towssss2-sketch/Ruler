@@ -3,6 +3,7 @@ import { OssConfig } from './storage-config';
 import { StorageError, storageErrorCode } from './storage-error';
 import { downloadDisposition, objectMetadata, uploadHeaders, validateCopy, validateKey, validateTtl } from './storage-policy';
 import { SignedTransfer, StorageService, StoredObject, UploadRequest } from './storage.service';
+import { hashObjectStream, validateFingerprint } from './object-fingerprint';
 
 /** 原生 OSS 适配器；不将 OSS 当作 S3 使用。本期只验证离线 SDK 契约，真实云接入另行批准。 */
 export class OssDriver extends StorageService {
@@ -61,6 +62,15 @@ export class OssDriver extends StorageService {
       if (storageErrorCode(error) === 'NoSuchKey') return null;
       throw new StorageError('UNAVAILABLE');
     }
+  }
+
+  /** 原生 OSS 条件流式读取；仅离线契约已验证，真实云仍待接入。 */
+  async fingerprint(key: string, sizeBytes: number, etag: string): Promise<string> {
+    validateFingerprint(key, sizeBytes, etag);
+    try {
+      const result = await this.client.getStream(key, { headers: { 'If-Match': etag } });
+      return await hashObjectStream(result.stream, sizeBytes);
+    } catch { throw new StorageError('UNAVAILABLE'); }
   }
 
   /** SDK 使用共享 HTTP 客户端，不销毁全局资源；本适配器没有自建连接池。 */
