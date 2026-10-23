@@ -1,4 +1,5 @@
 import 'party_e2e.dart';
+import 'ingestion_e2e.dart';
 import 'package:ruler_client/domain/case_filters.dart';
 import 'case_conflict_e2e.dart';
 import 'case_edit_e2e.dart';
@@ -66,6 +67,8 @@ Future<void> runScenarios(bool verifiedTls) async {
     _scenarios.add('真实法院阶段状态组合筛选、关键词分页与修改后更新时间排序');
     // 全套真实联调已超过同源每分钟 120 次预算；自然等待新窗口，不修改限流或清空 Redis。
     await Future<void>.delayed(const Duration(seconds: 61));
+    await ingestionScenario(first, origin, emails[0], emails[1], password);
+    _scenarios.add('真实转发文字接收去重、重登原文、账号隔离和忽略历史');
     await first.logout();
     await persistence(origin, emails[0], password, item);
     await second.login(emails[1], password);
