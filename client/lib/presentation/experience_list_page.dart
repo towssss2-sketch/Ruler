@@ -10,6 +10,8 @@ import 'case_filter_bar.dart';
 import 'experience_case_form.dart';
 import 'experience_widgets.dart';
 import 'today_entry.dart';
+import '../application/ingestion_provider.dart';
+import 'ingestion_page.dart';
 
 class ExperienceListPage extends ConsumerStatefulWidget {
   const ExperienceListPage({super.key});
@@ -39,6 +41,18 @@ class _ExperienceListPageState extends ConsumerState<ExperienceListPage> {
         title: const Text('我的体验案件'),
         leading: BackButton(onPressed: () => context.go('/')),
         actions: [
+          IconButton(
+            tooltip: '材料待定区',
+            icon: const Icon(Icons.inbox_outlined),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => IngestionPage(
+                  repository: ref.read(experienceIngestionProvider),
+                  offline: true,
+                ),
+              ),
+            ),
+          ),
           IconButton(
             tooltip: '今日任务',
             icon: const Icon(Icons.today),

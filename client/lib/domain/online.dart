@@ -4,6 +4,7 @@ import 'case_fields.dart';
 import 'case_filters.dart';
 import 'task_fields.dart';
 import 'today.dart';
+import 'ingestion.dart';
 
 /// 仅含可显示的固定提示，禁止传入原始响应、凭据或网络异常。
 class ApiFailure implements Exception {
@@ -69,6 +70,7 @@ class OnlinePage<T> {
 
 /// 连接版用例边界；实现必须通过后端授权，不复用内存演示仓库。
 abstract interface class OnlineRepository {
+  IngestionRepository get ingestions;
   Future<TodaySnapshot> today({int page = 1});
   Future<OnlinePage<OnlineCase>> cases({
     String keyword = '',

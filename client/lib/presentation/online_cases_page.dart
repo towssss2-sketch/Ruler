@@ -7,6 +7,7 @@ import 'online_form.dart';
 import 'online_tasks_page.dart';
 import 'online_widgets.dart';
 import 'today_entry.dart';
+import 'ingestion_page.dart';
 
 /// 当前账号的服务端案件列表，搜索和分页均由接口执行。
 class OnlineCasesPage extends StatefulWidget {
@@ -75,17 +76,7 @@ class _OnlineCasesPageState extends State<OnlineCasesPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: const Text('我的测试案件'),
-      actions: [
-        IconButton(
-          tooltip: '今日任务',
-          icon: const Icon(Icons.today),
-          onPressed: () => openOnlineToday(context, widget.repository),
-        ),
-        OnlineAction(label: '退出登录', run: widget.logout),
-      ],
-    ),
+    appBar: _appBar(),
     body: SafeArea(
       child: Column(
         children: [
@@ -130,6 +121,28 @@ class _OnlineCasesPageState extends State<OnlineCasesPage> {
       icon: const Icon(Icons.add),
       label: const Text('新建测试案件'),
     ),
+  );
+
+  AppBar _appBar() => AppBar(
+    title: const Text('我的测试案件'),
+    actions: [
+      IconButton(
+        tooltip: '材料待定区',
+        icon: const Icon(Icons.inbox_outlined),
+        onPressed: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) =>
+                IngestionPage(repository: widget.repository.ingestions),
+          ),
+        ),
+      ),
+      IconButton(
+        tooltip: '今日任务',
+        icon: const Icon(Icons.today),
+        onPressed: () => openOnlineToday(context, widget.repository),
+      ),
+      OnlineAction(label: '退出登录', run: widget.logout),
+    ],
   );
 
   void _applySearch() {

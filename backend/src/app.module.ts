@@ -6,9 +6,10 @@ import { AuthModule } from './modules/auth/auth.module';
 import { ResourceAccessModule } from './modules/case/resource-access.module';
 import { DocumentModule } from './modules/document/document.module';
 import { TaskModule } from './modules/task/task.module';
+import { IngestionModule } from './modules/ingestion/ingestion.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, ResourceAccessModule, DocumentModule, TaskModule],
+  imports: [PrismaModule, AuthModule, ResourceAccessModule, DocumentModule, TaskModule, IngestionModule],
   controllers: [HealthController],
   providers: [HealthService],
 })
