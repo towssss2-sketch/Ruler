@@ -7,7 +7,7 @@ import 'online_form.dart';
 import 'online_tasks_page.dart';
 import 'online_widgets.dart';
 import 'today_entry.dart';
-import 'ingestion_page.dart';
+import 'ingestion_entry.dart';
 
 /// 当前账号的服务端案件列表，搜索和分页均由接口执行。
 class OnlineCasesPage extends StatefulWidget {
@@ -132,7 +132,7 @@ class _OnlineCasesPageState extends State<OnlineCasesPage> {
         onPressed: () => Navigator.of(context).push(
           MaterialPageRoute<void>(
             builder: (_) =>
-                IngestionPage(repository: widget.repository.ingestions),
+                OnlineIngestionEntry(repository: widget.repository.ingestions),
           ),
         ),
       ),

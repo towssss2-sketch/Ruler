@@ -31,6 +31,10 @@ describe('文件待定区真实 HTTP、数据库和 MinIO', (): void => {
     expect(Buffer.from(row.rawContent).includes(Buffer.from('虚构待定'))).toBe(false);
     expect(row).toMatchObject({ matchedCaseId: null, stage: 'RECEIVE', aiResult: null });
     expect((await request('/ingestion/pending', undefined, access)).data.total).toBe(1);
+    const listed = (await request('/ingestion/pending', undefined, access)).data.items as Record<string, unknown>[];
+    expect(listed[0]!.file).toEqual(reply.data.file);
+    expect((await request(`/ingestion/${id}`, undefined, access)).data.file).toEqual(reply.data.file);
+    expect(Object.keys(listed[0]!.file as object).sort()).toEqual(['fileName', 'id', 'mimeType', 'sizeBytes']);
     const metadata = await request(`/ingestion/${id}/file`, undefined, access);
     expect(Object.keys(metadata.data).sort()).toEqual(['fileName', 'id', 'mimeType', 'sizeBytes']);
     const download = await request(`/ingestion/${id}/file/download`, undefined, access);

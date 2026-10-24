@@ -49,6 +49,9 @@ class _ExperienceListPageState extends ConsumerState<ExperienceListPage> {
                 builder: (_) => IngestionPage(
                   repository: ref.read(experienceIngestionProvider),
                   offline: true,
+                  addExample: ref
+                      .read(experienceIngestionProvider)
+                      .addFileExample,
                 ),
               ),
             ),

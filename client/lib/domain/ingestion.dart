@@ -28,10 +28,12 @@ class IngestionItem {
     required this.preview,
     required this.receivedAt,
     this.rawContent,
+    this.file,
   });
   final String id, channel, status, preview;
   final DateTime receivedAt;
   final String? rawContent;
+  final IngestionFile? file;
 }
 
 class IngestionReceipt {
@@ -47,4 +49,16 @@ abstract interface class IngestionRepository {
   Future<OnlinePage<IngestionItem>> list({int page = 1, bool history = false});
   Future<IngestionItem> detail(String id);
   Future<void> ignore(String id);
+}
+
+/// 待定区附件信息，无案件/分类，不持有内部对象键或访问签名。
+class IngestionFile {
+  const IngestionFile({
+    required this.id,
+    required this.name,
+    required this.mimeType,
+    required this.size,
+  });
+  final String id, name, mimeType;
+  final int size;
 }

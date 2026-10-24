@@ -1,6 +1,7 @@
 import '../domain/ingestion.dart';
 import '../domain/online.dart';
 import 'api_session.dart';
+import 'ingestion_file_wire.dart';
 
 const _invalid = ApiFailure('材料响应异常，请刷新重试。');
 
@@ -28,6 +29,7 @@ IngestionItem readIngestionItem(Object? raw, {bool detail = false}) {
     preview: preview,
     receivedAt: time,
     rawContent: detail ? text as String : null,
+    file: row['file'] == null ? null : readIngestionFile(row['file']),
   );
 }
 
