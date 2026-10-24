@@ -1,5 +1,5 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
-import { IngestionRecord, Prisma } from '@prisma/client';
+import { IngestionRecord, IngestionFile, Prisma } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import { BizException } from '../../biz-exception';
 import { PrismaRepository } from '../../prisma.repository';
@@ -37,7 +37,7 @@ export class IngestionService {
         ...(pending ? { status: 'PENDING_MATCH' } : {}) };
       const total = await tx.ingestionRecord.count({ where });
       const records = await tx.ingestionRecord.findMany({ where, take: pageSize, skip: (page - 1) * pageSize,
-        orderBy: [{ receivedAt: 'desc' }, { id: 'desc' }] });
+        orderBy: [{ receivedAt: 'desc' }, { id: 'desc' }], include: { file: true } });
       return { items: records.map((record): IngestionSummaryResult => this.view.summary(record)), total, page, pageSize };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead });
   }
@@ -65,8 +65,8 @@ export class IngestionService {
     });
   }
 
-  private async active(tx: Prisma.TransactionClient, userId: string, id: string): Promise<IngestionRecord> {
-    const record = await tx.ingestionRecord.findFirst({ where: { id, userId, deletedAt: null } });
+  private async active(tx: Prisma.TransactionClient, userId: string, id: string): Promise<IngestionRecord & { file: IngestionFile | null }> {
+    const record = await tx.ingestionRecord.findFirst({ where: { id, userId, deletedAt: null }, include: { file: true } });
     if (!record) throw new ForbiddenException();
     return record;
   }

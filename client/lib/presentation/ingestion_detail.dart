@@ -41,6 +41,11 @@ class _IngestionDetailDialogState extends State<IngestionDetailDialog> {
                 '${ingestionChannels[item.channel]} · ${ingestionStatuses[item.status]}',
               ),
               const SizedBox(height: 12),
+              if (item.file != null) ...[
+                Text('附件：${item.file!.name}'),
+                Text('${item.file!.size} 字节 · ${item.file!.mimeType}'),
+                const Text('以下是接收说明，尚未提取文件正文。'),
+              ],
               // 纯文本展示，不把文内链接转换为可访问或自动下载的入口。
               SelectableText(item.rawContent!),
             ],

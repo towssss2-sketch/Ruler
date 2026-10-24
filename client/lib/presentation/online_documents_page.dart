@@ -87,7 +87,13 @@ class _DocumentListState extends State<DocumentList> {
   }
 
   Future<void> _save(CaseDocument file) async {
-    final saved = await widget.files!.save(file, widget.repository);
+    final saved = await widget.files!.save(
+      DownloadSource(
+        name: file.name,
+        size: file.size,
+        download: (consume) => widget.repository.download(file, consume),
+      ),
+    );
     if (mounted) {
       ScaffoldMessenger.of(
         context,

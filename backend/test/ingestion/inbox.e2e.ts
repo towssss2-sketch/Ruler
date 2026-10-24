@@ -26,7 +26,7 @@ describe('文字待定区真实 HTTP 与数据库', (): void => {
     const pending = await request('/ingestion/pending', undefined, access);
     expect(pending.data).toMatchObject({ total: 1, page: 1, pageSize: 20 });
     const items = pending.data.items as Record<string, unknown>[];
-    expect(Object.keys(items[0]!).sort()).toEqual(['channel', 'id', 'preview', 'receivedAt', 'status']);
+    expect(Object.keys(items[0]!).sort()).toEqual(['channel', 'file', 'id', 'preview', 'receivedAt', 'status']);
     expect(Array.from(items[0]!.preview as string)).toHaveLength(200);
     expect((await request(`/ingestion/${id}`, undefined, access)).data.rawContent).toBe(text);
     expect((await request(`/ingestion/${id}/ignore`, {}, access)).status).toBe(201);

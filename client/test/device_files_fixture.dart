@@ -18,10 +18,7 @@ class DeviceFixture implements DeviceFiles {
       ? null
       : selected;
   @override
-  Future<bool> save(
-    CaseDocument document,
-    DocumentRepository repository,
-  ) async => saved;
+  Future<bool> save(DownloadSource source) async => saved;
   @override
   void close() {}
 }

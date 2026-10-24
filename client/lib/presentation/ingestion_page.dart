@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../domain/ingestion.dart';
+import '../domain/ingestion_files.dart';
+import '../domain/device_files.dart';
+import 'ingestion_upload_dialog.dart';
 import '../domain/online.dart';
 import 'ingestion_detail.dart';
 import 'ingestion_editor.dart';
@@ -9,10 +12,16 @@ class IngestionPage extends StatefulWidget {
   const IngestionPage({
     required this.repository,
     this.offline = false,
+    this.attachments,
+    this.files,
+    this.addExample,
     super.key,
   });
   final IngestionRepository repository;
   final bool offline;
+  final IngestionFiles? attachments;
+  final DeviceFiles? files;
+  final Future<IngestionReceipt> Function()? addExample;
   @override
   State<IngestionPage> createState() => _IngestionPageState();
 }
@@ -44,6 +53,52 @@ class _IngestionPageState extends State<IngestionPage> {
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
       ..showSnackBar(SnackBar(content: Text(receipt.message)));
+  }
+
+  Future<void> _upload() async {
+    final receipt = await showDialog<IngestionFileReceipt>(
+      context: context,
+      useRootNavigator: false,
+      barrierDismissible: false,
+      builder: (_) => IngestionUploadDialog(
+        repository: widget.attachments!,
+        files: widget.files!,
+      ),
+    );
+    if (!mounted) return;
+    if (receipt != null) _history = receipt.status != 'PENDING_MATCH';
+    _load(1); // 关闭时完成响应可能尚未到达，也独立重读确认。
+    if (receipt != null) _notice(receipt.message);
+  }
+
+  Future<void> _example() async {
+    final receipt = await widget.addExample!();
+    if (!mounted) return;
+    _history = receipt.status != 'PENDING_MATCH';
+    _load(1);
+    _notice(
+      receipt.duplicate
+          ? '虚构文件示例已存在，当前${ingestionStatuses[receipt.status]}。'
+          : '已添加虚构文件示例，没有上传真实文件。',
+    );
+  }
+
+  void _notice(String text) => ScaffoldMessenger.of(context)
+    ..clearSnackBars()
+    ..showSnackBar(SnackBar(content: Text(text)));
+
+  Future<void> _save(IngestionItem item) async {
+    ScaffoldMessenger.of(context).clearSnackBars();
+    final file = item.file!;
+    final saved = await widget.files!.save(
+      DownloadSource(
+        name: file.name,
+        size: file.size,
+        download: (consume) =>
+            widget.attachments!.download(item.id, file, consume),
+      ),
+    );
+    if (mounted) _notice(saved ? '文件已保存到所选位置。' : '已取消保存。');
   }
 
   Future<void> _ignore(IngestionItem item) async {
@@ -125,36 +180,54 @@ class _IngestionPageState extends State<IngestionPage> {
     child: Column(
       children: [
         Text(widget.offline ? '虚构体验 · 关闭应用清除' : '测试服务 · 仅限虚构资料'),
-        const Text('手动接收微信文字。文件导入、自动分类和指派案件尚未开放。'),
-        Wrap(
-          spacing: 12,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            ChoiceChip(
-              label: const Text('待定材料'),
-              selected: !_history,
-              onSelected: (_) {
-                _history = false;
-                _load(1);
-              },
-            ),
-            ChoiceChip(
-              label: const Text('归集历史'),
-              selected: _history,
-              onSelected: (_) {
-                _history = true;
-                _load(1);
-              },
-            ),
-            OutlinedButton.icon(
-              onPressed: _receive,
-              icon: const Icon(Icons.add),
-              label: const Text('粘贴转发文字'),
-            ),
-          ],
+        Text(
+          widget.offline
+              ? '可添加虚构文字或文件示例；不读取设备文件。'
+              : '手动接收微信文字或设备文件。分类与指派案件尚未开放。',
         ),
+        _actions(),
       ],
     ),
+  );
+
+  Widget _actions() => Wrap(
+    spacing: 12,
+    crossAxisAlignment: WrapCrossAlignment.center,
+    children: [
+      ChoiceChip(
+        label: const Text('待定材料'),
+        selected: !_history,
+        onSelected: (_) {
+          _history = false;
+          _load(1);
+        },
+      ),
+      ChoiceChip(
+        label: const Text('归集历史'),
+        selected: _history,
+        onSelected: (_) {
+          _history = true;
+          _load(1);
+        },
+      ),
+      if (widget.attachments != null && widget.files != null)
+        OutlinedButton.icon(
+          onPressed: _upload,
+          icon: const Icon(Icons.upload_file),
+          label: const Text('导入设备文件'),
+        ),
+      if (widget.addExample != null)
+        OutlinedButton.icon(
+          onPressed: _example,
+          icon: const Icon(Icons.note_add_outlined),
+          label: const Text('添加虚构文件示例'),
+        ),
+      OutlinedButton.icon(
+        onPressed: _receive,
+        icon: const Icon(Icons.add),
+        label: const Text('粘贴转发文字'),
+      ),
+    ],
   );
 
   Widget _list(OnlinePage<IngestionItem> result) => Column(
@@ -194,14 +267,21 @@ class _IngestionPageState extends State<IngestionPage> {
             '接收时间（北京时间）：${item.receivedAt.toUtc().add(const Duration(hours: 8)).toIso8601String().substring(0, 16).replaceAll('T', ' ')}',
           ),
           const SizedBox(height: 8),
+          if (item.file != null)
+            Text('附件：${item.file!.name} · ${item.file!.size} 字节'),
           Text(item.preview, maxLines: 4, overflow: TextOverflow.ellipsis),
           Wrap(
             spacing: 12,
             children: [
               TextButton(
                 onPressed: () => _detail(item),
-                child: const Text('查看原文'),
+                child: Text(item.file == null ? '查看原文' : '查看材料'),
               ),
+              if (item.file != null &&
+                  widget.attachments != null &&
+                  widget.files != null)
+                OnlineAction(label: '下载原件', run: () => _save(item)),
+              if (item.file != null && widget.offline) const Text('虚构示例，无真实原件'),
               if (item.status == 'PENDING_MATCH')
                 OnlineAction(label: '忽略材料', run: () => _ignore(item)),
             ],

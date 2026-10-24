@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { IngestionRecord } from '@prisma/client';
+import { IngestionRecord, IngestionFile }  from '@prisma/client';
+import { fileView, IngestionFileView } from './ingestion-file-policy';
 import { EncryptionService } from '../../encryption.service';
 
-export type IngestionSummary = Pick<IngestionRecord, 'id' | 'channel' | 'status' | 'receivedAt'> & { preview: string };
+export type IngestionSummary = Pick<IngestionRecord, 'id' | 'channel' | 'status' | 'receivedAt'> & { preview: string; file: IngestionFileView | null };
 export type IngestionDetail = IngestionSummary & { rawContent: string };
 export interface IngestionReceipt { id: string; status: IngestionRecord['status']; duplicate: boolean }
 export interface IngestionPage { items: IngestionSummary[]; total: number; page: number; pageSize: number }
@@ -12,13 +13,13 @@ export class IngestionViewService {
   constructor(private readonly cipher: EncryptionService) {}
 
   /** 授权查询后解密；原文只在详情返回，列表仅返回最多 200 个 Unicode 码点。 */
-  summary(record: IngestionRecord): IngestionSummary {
+  summary(record: IngestionRecord & { file?: IngestionFile | null }): IngestionSummary {
     return { id: record.id, channel: record.channel, status: record.status, receivedAt: record.receivedAt,
-      preview: Array.from(this.decrypt(record)).slice(0, 200).join('') };
+      preview: Array.from(this.decrypt(record)).slice(0, 200).join(''), file: record.file ? fileView(record.file) : null };
   }
 
   /** 返回原文但不返回密文、哈希、对象键、链接字段、AI 结构或其他用户信息。 */
-  detail(record: IngestionRecord): IngestionDetail {
+  detail(record: IngestionRecord & { file?: IngestionFile | null }): IngestionDetail {
     return { ...this.summary(record), rawContent: this.decrypt(record) };
   }
 

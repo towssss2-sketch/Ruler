@@ -68,20 +68,17 @@ class SystemFiles implements DeviceFiles {
   }
 
   @override
-  Future<bool> save(
-    CaseDocument document,
-    DocumentRepository repository,
-  ) async {
+  Future<bool> save(DownloadSource source) async {
     StagedFile? staged;
     try {
       if (!_active) return false;
       staged = await StagedFile.create(await _root());
       final target = staged;
-      await repository.download(document, (stream) async {
-        await target.receive(stream, document.size, () => _active);
+      await source.download((stream) async {
+        await target.receive(stream, source.size, () => _active);
       });
       if (!_active) return false;
-      final name = safeSaveName(document.name);
+      final name = safeSaveName(source.name);
       if (Platform.isAndroid) {
         return await _channel.invokeMethod<bool>('save', {
               'path': staged.file.path,
