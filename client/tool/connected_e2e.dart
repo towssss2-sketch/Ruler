@@ -1,5 +1,6 @@
 import 'party_e2e.dart';
 import 'ingestion_e2e.dart';
+import 'ingestion_assign_e2e.dart';
 import 'ingestion_file_e2e.dart';
 import 'package:ruler_client/domain/case_filters.dart';
 import 'case_conflict_e2e.dart';
@@ -96,6 +97,8 @@ Future<void> inboxScenarios(
   _scenarios.add('真实转发文字接收去重、重登原文、账号隔离和忽略历史');
   await ingestionFileScenario(first, emails[0], emails[1], password);
   _scenarios.add('真实文件待定上传去重、附件重登、下载原字节、账号隔离及忽略保留');
+  await ingestionAssignScenario(first, emails[0], emails[1], password);
+  _scenarios.add('真实待定附件按类归档、幂等指派、重登按类下载及越权拒绝');
 }
 
 /// 只输出固定场景结果，不包含当事人资料、登录凭据或签名。

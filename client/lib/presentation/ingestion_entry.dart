@@ -4,6 +4,9 @@ import '../application/ingestion_files_provider.dart';
 import '../application/documents_provider.dart';
 import '../domain/ingestion.dart';
 import 'ingestion_page.dart';
+import '../application/online_provider.dart';
+import '../infrastructure/api_repository.dart';
+import '../infrastructure/api_ingestion_assignment.dart';
 
 class OnlineIngestionEntry extends ConsumerWidget {
   const OnlineIngestionEntry({required this.repository, super.key});
@@ -13,5 +16,9 @@ class OnlineIngestionEntry extends ConsumerWidget {
     repository: repository,
     attachments: ref.watch(ingestionFilesProvider),
     files: ref.watch(deviceFilesProvider),
+    assignment: switch (ref.watch(onlineProvider)) {
+      ApiRepository api => ApiIngestionAssignment(api.session, api),
+      _ => null,
+    },
   );
 }

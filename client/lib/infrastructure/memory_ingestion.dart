@@ -1,4 +1,6 @@
 import '../domain/ingestion.dart';
+import '../domain/ingestion_assignment.dart';
+import '../domain/documents.dart';
 import '../domain/ingestion_files.dart';
 import '../domain/online.dart';
 
@@ -6,6 +8,7 @@ import '../domain/online.dart';
 class MemoryIngestion implements IngestionRepository {
   final _items = <IngestionItem>[];
   int _sequence = 0;
+  final _assignments = <String, AssignmentReceipt>{};
   @override
   Future<IngestionReceipt> receive(String text) async {
     final error = ingestionTextError(text);
@@ -80,11 +83,53 @@ class MemoryIngestion implements IngestionRepository {
 
   @override
   Future<void> ignore(String id) async {
-    final item = await detail(id);
+    final item = _items.firstWhere(
+      (item) => item.id == id,
+      orElse: () => throw const ApiFailure('材料不存在。'),
+    );
+    if (item.status == 'IGNORED') return;
+    if (item.status != 'PENDING_MATCH') {
+      throw const ApiFailure('材料已关联案件，请刷新核对。');
+    }
+    _replace(item, 'IGNORED');
+  }
+
+  /// 校验和写入均同步，避免忽略/并发指派在异步刷新期间重复归档。
+  AssignmentReceipt assignExample(
+    String id,
+    String caseId,
+    String category,
+    void Function(IngestionFile, bool) archive,
+  ) {
+    if (!documentCategories.containsKey(category)) {
+      throw const ApiFailure('请选择有效分类。');
+    }
+    final item = _items.firstWhere(
+      (item) => item.id == id,
+      orElse: () => throw const ApiFailure('材料不存在。'),
+    );
+    final previous = _assignments[id];
+    if (previous != null &&
+        previous.caseId == caseId &&
+        previous.category == category) {
+      archive(item.file!, true);
+      return previous;
+    }
+    if (item.status != 'PENDING_MATCH' || item.file == null) {
+      throw const ApiFailure('材料状态已改变或没有附件，请刷新核对。');
+    }
+    archive(item.file!, false);
+    final receipt = AssignmentReceipt(id, caseId, category);
+    _assignments[id] = receipt;
+    _replace(item, 'ASSIGNED');
+    return receipt;
+  }
+
+  void _replace(IngestionItem item, String status) {
     _items[_items.indexOf(item)] = IngestionItem(
       id: item.id,
       channel: item.channel,
-      status: 'IGNORED',
+      status: status,
       preview: item.preview,
       receivedAt: item.receivedAt,
       rawContent: item.rawContent,

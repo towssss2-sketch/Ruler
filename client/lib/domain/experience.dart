@@ -31,11 +31,15 @@ class ExperienceFile {
     required this.id,
     required this.version,
     this.category = 'EVIDENCE',
+    this.name = '虚构示例材料.pdf',
+    this.versionGroupId,
   });
   final String id;
   final int version;
   final String category;
-  String get name => '虚构示例材料.pdf';
+  final String name;
+  final String? versionGroupId;
+  String get group => versionGroupId ?? category;
 }
 
 class ExperienceCase {
@@ -117,6 +121,13 @@ abstract class ExperienceRepository {
   Future<void> completeTask(String caseId, String taskId);
   Future<void> addSample(String caseId, {String category = 'EVIDENCE'});
   Future<void> removeFile(String caseId, String fileId);
+  void archiveSample(
+    String caseId,
+    String ingestionId,
+    String name,
+    String category, {
+    bool retry = false,
+  }) => throw const ExperienceFailure('此体验仓库暂不支持归档');
 }
 
 class ExperienceFailure implements Exception {

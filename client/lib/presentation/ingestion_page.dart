@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../domain/ingestion.dart';
+import '../domain/ingestion_assignment.dart';
+import 'ingestion_assign_dialog.dart';
 import '../domain/ingestion_files.dart';
 import '../domain/device_files.dart';
 import 'ingestion_upload_dialog.dart';
@@ -15,10 +17,12 @@ class IngestionPage extends StatefulWidget {
     this.attachments,
     this.files,
     this.addExample,
+    this.assignment,
     super.key,
   });
   final IngestionRepository repository;
   final bool offline;
+  final IngestionAssignment? assignment;
   final IngestionFiles? attachments;
   final DeviceFiles? files;
   final Future<IngestionReceipt> Function()? addExample;
@@ -133,6 +137,23 @@ class _IngestionPageState extends State<IngestionPage> {
     }
   }
 
+  Future<void> _assign(IngestionItem item) async {
+    final notice = await showDialog<String>(
+      context: context,
+      useRootNavigator: false,
+      barrierDismissible: false,
+      builder: (_) => IngestionAssignDialog(
+        item: item,
+        repository: widget.assignment!,
+        offline: widget.offline,
+      ),
+    );
+    if (!mounted) return;
+    if (notice != null) _history = true;
+    _load(1);
+    if (notice != null) _notice(notice);
+  }
+
   Future<void> _detail(IngestionItem item) => showDialog<void>(
     context: context,
     useRootNavigator: false,
@@ -183,7 +204,7 @@ class _IngestionPageState extends State<IngestionPage> {
         Text(
           widget.offline
               ? '可添加虚构文字或文件示例；不读取设备文件。'
-              : '手动接收微信文字或设备文件。分类与指派案件尚未开放。',
+              : '手动接收文字或文件；待定附件可选择分类并归入案件。',
         ),
         _actions(),
       ],
@@ -282,6 +303,13 @@ class _IngestionPageState extends State<IngestionPage> {
                   widget.files != null)
                 OnlineAction(label: '下载原件', run: () => _save(item)),
               if (item.file != null && widget.offline) const Text('虚构示例，无真实原件'),
+              if (item.status == 'PENDING_MATCH' &&
+                  item.file != null &&
+                  widget.assignment != null)
+                TextButton(
+                  onPressed: () => _assign(item),
+                  child: const Text('分类归档'),
+                ),
               if (item.status == 'PENDING_MATCH')
                 OnlineAction(label: '忽略材料', run: () => _ignore(item)),
             ],

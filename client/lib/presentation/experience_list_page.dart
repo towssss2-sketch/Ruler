@@ -12,6 +12,7 @@ import 'experience_widgets.dart';
 import 'today_entry.dart';
 import '../application/ingestion_provider.dart';
 import 'ingestion_page.dart';
+import '../infrastructure/memory_ingestion_assignment.dart';
 
 class ExperienceListPage extends ConsumerStatefulWidget {
   const ExperienceListPage({super.key});
@@ -33,6 +34,21 @@ class _ExperienceListPageState extends ConsumerState<ExperienceListPage> {
     if (mounted && id != null) context.go('/experience/$id');
   }
 
+  void _openInbox() => Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) => IngestionPage(
+        repository: ref.read(experienceIngestionProvider),
+        offline: true,
+        assignment: MemoryIngestionAssignment(
+          ref.read(experienceIngestionProvider),
+          ref.read(experienceRepositoryProvider),
+          ref.read(experienceProvider.notifier).reload,
+        ),
+        addExample: ref.read(experienceIngestionProvider).addFileExample,
+      ),
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(experienceProvider);
@@ -44,17 +60,7 @@ class _ExperienceListPageState extends ConsumerState<ExperienceListPage> {
           IconButton(
             tooltip: '材料待定区',
             icon: const Icon(Icons.inbox_outlined),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => IngestionPage(
-                  repository: ref.read(experienceIngestionProvider),
-                  offline: true,
-                  addExample: ref
-                      .read(experienceIngestionProvider)
-                      .addFileExample,
-                ),
-              ),
-            ),
+            onPressed: _openInbox,
           ),
           IconButton(
             tooltip: '今日任务',

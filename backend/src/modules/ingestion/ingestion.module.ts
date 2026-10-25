@@ -1,3 +1,7 @@
+import { ResourceAccessModule } from '../case/resource-access.module';
+import { IngestionAssignController, IngestionAssignGuard } from './ingestion-assign.controller';
+import { IngestionAssignService } from './ingestion-assign.service';
+import { IngestionAssignTicketService } from './ingestion-assign-ticket.service';
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../../prisma.module';
 import { EncryptionService } from '../../encryption.service';
@@ -13,8 +17,8 @@ import { IngestionFileRegisterService } from './ingestion-file-register.service'
 import { IngestionFileReadService } from './ingestion-file-read.service';
 import { IngestionFileCleanupService } from './ingestion-file-cleanup.service';
 
-@Module({ imports: [PrismaModule, StorageModule], controllers: [IngestionController, IngestionFileController],
-  providers: [IngestionService, IngestionViewService, IngestionFileUploadService, IngestionFileRegisterService,
+@Module({ imports: [PrismaModule, StorageModule, ResourceAccessModule], controllers: [IngestionController, IngestionFileController, IngestionAssignController],
+  providers: [IngestionAssignGuard, IngestionAssignService, IngestionAssignTicketService, IngestionService, IngestionViewService, IngestionFileUploadService, IngestionFileRegisterService,
     IngestionFileReadService, IngestionFileCleanupService,
   { provide: EncryptionService, useFactory: (): EncryptionService => configuredCipher(process.env) }] })
 export class IngestionModule {}
