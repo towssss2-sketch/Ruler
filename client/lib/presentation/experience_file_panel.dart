@@ -85,9 +85,7 @@ class _ExperienceFilePanelState extends ConsumerState<ExperienceFilePanel> {
   );
 
   bool _current(ExperienceFile file) =>
-      widget.record.files
-          .lastWhere((other) => other.category == file.category)
-          .id ==
+      widget.record.files.lastWhere((other) => other.group == file.group).id ==
       file.id;
 
   void _explain() => showDialog<void>(

@@ -211,6 +211,35 @@ class MemoryExperience implements ExperienceRepository {
     );
   }
 
+  /// 同步写入独立虚构文件，让材料状态与案件示例在同一次调用中改变。
+  @override
+  void archiveSample(
+    String caseId,
+    String ingestionId,
+    String name,
+    String category, {
+    bool retry = false,
+  }) {
+    final record = _record(caseId);
+    if (!documentCategories.containsKey(category)) {
+      throw const ExperienceFailure('请选择有效分类');
+    }
+    if (record.files.any((file) => file.id == ingestionId)) return;
+    if (retry) throw const ExperienceFailure('已归档示例已移除，请刷新核对');
+    _cases[caseId] = record.copyWith(
+      files: [
+        ...record.files,
+        ExperienceFile(
+          id: ingestionId,
+          versionGroupId: ingestionId,
+          version: 1,
+          category: category,
+          name: name,
+        ),
+      ],
+    );
+  }
+
   @override
   Future<void> removeFile(String caseId, String fileId) async {
     final record = _record(caseId);
