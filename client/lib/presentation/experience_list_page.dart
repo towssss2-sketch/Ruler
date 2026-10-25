@@ -12,6 +12,8 @@ import 'experience_widgets.dart';
 import 'today_entry.dart';
 import '../application/ingestion_provider.dart';
 import 'ingestion_page.dart';
+import 'experience_detail_page.dart';
+import '../infrastructure/memory_ingestion_archive.dart';
 import '../infrastructure/memory_ingestion_assignment.dart';
 
 class ExperienceListPage extends ConsumerStatefulWidget {
@@ -39,6 +41,19 @@ class _ExperienceListPageState extends ConsumerState<ExperienceListPage> {
       builder: (_) => IngestionPage(
         repository: ref.read(experienceIngestionProvider),
         offline: true,
+        archive: MemoryIngestionArchive(
+          ref.read(experienceIngestionProvider),
+          ref.read(experienceRepositoryProvider),
+          ref.read(experienceProvider.notifier).reload,
+        ),
+        openCase: (item) => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (context) => ExperienceDetailPage(
+              caseId: item.id,
+              onBack: () => Navigator.pop(context),
+            ),
+          ),
+        ),
         assignment: MemoryIngestionAssignment(
           ref.read(experienceIngestionProvider),
           ref.read(experienceRepositoryProvider),

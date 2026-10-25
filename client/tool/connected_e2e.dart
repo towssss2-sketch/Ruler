@@ -99,6 +99,7 @@ Future<void> inboxScenarios(
   _scenarios.add('真实文件待定上传去重、附件重登、下载原字节、账号隔离及忽略保留');
   await ingestionAssignScenario(first, emails[0], emails[1], password);
   _scenarios.add('真实待定附件按类归档、幂等指派、重登按类下载及越权拒绝');
+  _scenarios.add('真实归档去向、撤回待定、版本防重放、重新分类及下载字节一致');
 }
 
 /// 只输出固定场景结果，不包含当事人资料、登录凭据或签名。

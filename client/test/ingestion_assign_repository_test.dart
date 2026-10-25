@@ -47,7 +47,11 @@ void protocol() {
         category,
       );
       expect(requests.last.path, '/ingestion/in%2Fbox/assign');
-      expect(requests.last.data, {'caseId': 'case', 'category': category});
+      expect(requests.last.data, {
+        'caseId': 'case',
+        'category': category,
+        'revision': 0,
+      });
     }
     for (final key in ['caseId', 'ingestionId', 'source', 'category']) {
       final original = document[key];

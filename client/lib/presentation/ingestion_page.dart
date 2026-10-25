@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../domain/ingestion.dart';
+import '../domain/ingestion_archive.dart';
+import 'ingestion_archive_dialog.dart';
 import '../domain/ingestion_assignment.dart';
 import 'ingestion_assign_dialog.dart';
 import '../domain/ingestion_files.dart';
@@ -18,10 +20,14 @@ class IngestionPage extends StatefulWidget {
     this.files,
     this.addExample,
     this.assignment,
+    this.archive,
+    this.openCase,
     super.key,
   });
   final IngestionRepository repository;
   final bool offline;
+  final IngestionArchive? archive;
+  final Future<void> Function(OnlineCase)? openCase;
   final IngestionAssignment? assignment;
   final IngestionFiles? attachments;
   final DeviceFiles? files;
@@ -152,6 +158,29 @@ class _IngestionPageState extends State<IngestionPage> {
     if (notice != null) _history = true;
     _load(1);
     if (notice != null) _notice(notice);
+  }
+
+  Future<void> _archive(IngestionItem item) async {
+    final result = await showDialog<ArchiveDialogResult>(
+      context: context,
+      useRootNavigator: false,
+      barrierDismissible: false,
+      builder: (_) => IngestionArchiveDialog(
+        id: item.id,
+        repository: widget.archive!,
+        offline: widget.offline,
+      ),
+    );
+    if (!mounted) return;
+    if (result?.target != null) {
+      await widget.openCase?.call(result!.target!);
+      if (!mounted) return;
+    }
+    if (result?.status != null) {
+      _history = result!.status != 'PENDING_MATCH';
+      _notice(_history ? '材料当前已忽略，可在归集历史核对。' : '已撤回待定区，可以重新选择案件和分类。');
+    }
+    _load(1);
   }
 
   Future<void> _detail(IngestionItem item) => showDialog<void>(
@@ -303,6 +332,11 @@ class _IngestionPageState extends State<IngestionPage> {
                   widget.files != null)
                 OnlineAction(label: '下载原件', run: () => _save(item)),
               if (item.file != null && widget.offline) const Text('虚构示例，无真实原件'),
+              if (item.status == 'ASSIGNED' && widget.archive != null)
+                TextButton(
+                  onPressed: () => _archive(item),
+                  child: const Text('归档去向'),
+                ),
               if (item.status == 'PENDING_MATCH' &&
                   item.file != null &&
                   widget.assignment != null)

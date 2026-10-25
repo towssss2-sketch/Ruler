@@ -8,6 +8,7 @@ import '../domain/online.dart';
 class MemoryIngestion implements IngestionRepository {
   final _items = <IngestionItem>[];
   int _sequence = 0;
+  final _withdrawn = <String, String>{};
   final _assignments = <String, AssignmentReceipt>{};
   @override
   Future<IngestionReceipt> receive(String text) async {
@@ -99,8 +100,9 @@ class MemoryIngestion implements IngestionRepository {
     String id,
     String caseId,
     String category,
-    void Function(IngestionFile, bool) archive,
-  ) {
+    void Function(IngestionFile, AssignmentReceipt, bool) archive, {
+    int revision = 0,
+  }) {
     if (!documentCategories.containsKey(category)) {
       throw const ApiFailure('请选择有效分类。');
     }
@@ -108,28 +110,64 @@ class MemoryIngestion implements IngestionRepository {
       (item) => item.id == id,
       orElse: () => throw const ApiFailure('材料不存在。'),
     );
+    if (item.assignmentRevision != revision) {
+      throw const ApiFailure('材料已撤回或重新归档，请刷新后操作。');
+    }
     final previous = _assignments[id];
     if (previous != null &&
         previous.caseId == caseId &&
         previous.category == category) {
-      archive(item.file!, true);
+      archive(item.file!, previous, true);
       return previous;
     }
     if (item.status != 'PENDING_MATCH' || item.file == null) {
       throw const ApiFailure('材料状态已改变或没有附件，请刷新核对。');
     }
-    archive(item.file!, false);
-    final receipt = AssignmentReceipt(id, caseId, category);
+    final receipt = AssignmentReceipt(
+      revision == 0 ? id : '$id-r$revision',
+      caseId,
+      category,
+    );
+    archive(item.file!, receipt, false);
     _assignments[id] = receipt;
     _replace(item, 'ASSIGNED');
     return receipt;
   }
 
-  void _replace(IngestionItem item, String status) {
+  AssignmentReceipt? currentAssignment(String id) => _assignments[id];
+
+  /// 同步撤回虚构元数据；本次文档身份防止旧按钮撤回后来重新归档的文件。
+  String withdrawExample(
+    String id,
+    AssignmentReceipt receipt,
+    void Function() remove,
+  ) {
+    final item = _items.firstWhere(
+      (item) => item.id == id,
+      orElse: () => throw const ApiFailure('材料不存在。'),
+    );
+    if (['PENDING_MATCH', 'IGNORED'].contains(item.status) &&
+        _withdrawn[receipt.documentId] == receipt.caseId) {
+      return item.status;
+    }
+    if (item.status != 'ASSIGNED' ||
+        _assignments[id]?.documentId != receipt.documentId ||
+        _assignments[id]?.caseId != receipt.caseId) {
+      throw const ApiFailure('归档状态已改变，请刷新核对。');
+    }
+    remove();
+    _withdrawn[receipt.documentId] = receipt.caseId;
+    _assignments.remove(id);
+    _replace(item, 'PENDING_MATCH', revision: item.assignmentRevision + 1);
+    return 'PENDING_MATCH';
+  }
+
+  void _replace(IngestionItem item, String status, {int? revision}) {
     _items[_items.indexOf(item)] = IngestionItem(
       id: item.id,
       channel: item.channel,
       status: status,
+      assignmentRevision: revision ?? item.assignmentRevision,
       preview: item.preview,
       receivedAt: item.receivedAt,
       rawContent: item.rawContent,

@@ -44,8 +44,17 @@
 
 ## 6A2B2：人工案件归档
 
-`POST /ingestion/:id/assign` 仅接受 `{ caseId, category }`，返回正式 DocumentView，不含内部对象键。守卫复用统一 CaseAccessService，事务内按案件→用户→归集记录→票据复查。只允许本人待定附件转本人 OWNER 案件，11 类枚举全部保留。
+`POST /ingestion/:id/assign` 仅接受 `{ caseId, category, revision? }`，返回正式 DocumentView，不含内部对象键。守卫复用统一 CaseAccessService，事务内按案件→用户→归集记录→票据复查。只允许本人待定附件转本人 OWNER 案件，11 类枚举全部保留。
 
 先保存 DocumentUpload 准备票据与容量预约（不签发上传 URL）；独立 pendingKey 从未指向归集原件。第二事务复制冻结原件到规范案件键，状态 ASSIGNED/matchedCaseId/stage=MATCH、Document、容量和审计原子提交。来源沿用渠道，原件保留；新增副本计等量容量。相同案件/分类重试返回原文件，改派/其他分类/忽略/软删/无附件均拒绝。
 
 失败有效票据复用，过期或竞争产生的孤立副本由原 DocumentCleanupService 回收，绝不回收已登记或保留原件。案件软删仍保留历史容量。不自动提取、匹配或建议任务，不提供撤回/改派。无新依赖、Schema 或公开服务。
+
+
+## 6A2C：归档去向与撤回
+
+`GET /ingestion/:id/assignment` 返回 UNASSIGNED / UNAVAILABLE 或 AVAILABLE 的当前案号、法院、分类、caseId/documentId/canWithdraw。查询同时限定本人材料、当前 OWNER 案件与活动文档；案件级联软删归集后返回 403，不返回旧摘要。
+
+`POST /ingestion/:id/withdraw` 接收 caseId/documentId，通过统一案件授权后按案件→用户→归集加锁。只撤回当前 ASSIGNED 单一归档且无其他活动版本；文档软删除、归集回 PENDING_MATCH/matchedCaseId=null、assignmentRevision 递增、审计同事务，不触及存储或容量。重复请求读取原撤回审计但不复活忽略记录；新归档后旧文档请求冲突。
+
+迁移新增 assignmentRevision 默认 0、非负，列表/详情增加此字段；归档 revision 缺省 0，准备与提交均核对，旧客户端对撤回后的材料不能盲目归档。重新归档只忽略已软删历史版本，创建新文档，不复活旧对象身份。阶段仍为人工 MATCH，不启动提取/AI/重试队列。

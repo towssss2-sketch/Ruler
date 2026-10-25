@@ -121,6 +121,8 @@ abstract class ExperienceRepository {
   Future<void> completeTask(String caseId, String taskId);
   Future<void> addSample(String caseId, {String category = 'EVIDENCE'});
   Future<void> removeFile(String caseId, String fileId);
+  void withdrawSample(String caseId, String documentId) =>
+      throw const ExperienceFailure('此体验仓库暂不支持撤回');
   void archiveSample(
     String caseId,
     String ingestionId,

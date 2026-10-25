@@ -16,8 +16,9 @@ class ApiIngestionAssignment implements IngestionAssignment {
   Future<AssignmentReceipt> assign(
     String id,
     String caseId,
-    String category,
-  ) async {
+    String category, {
+    int revision = 0,
+  }) async {
     if (!documentCategories.containsKey(category)) {
       throw const ApiFailure('请选择有效分类。');
     }
@@ -25,7 +26,7 @@ class ApiIngestionAssignment implements IngestionAssignment {
       await session.request(
         'POST',
         '/ingestion/${Uri.encodeComponent(id)}/assign',
-        data: {'caseId': caseId, 'category': category},
+        data: {'caseId': caseId, 'category': category, 'revision': revision},
       ),
     );
     final document = parseDocument(result);
