@@ -49,7 +49,12 @@ class _IngestionAssignDialogState extends State<IngestionAssignDialog> {
       _error = null;
     });
     try {
-      await widget.repository.assign(widget.item.id, _selected!.id, _category!);
+      await widget.repository.assign(
+        widget.item.id,
+        _selected!.id,
+        _category!,
+        revision: widget.item.assignmentRevision,
+      );
       if (mounted) {
         Navigator.pop(
           context,

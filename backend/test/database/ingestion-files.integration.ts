@@ -50,3 +50,13 @@ describe('归集文件与上传票据实际数据库约束', (): void => {
     }
   });
 });
+
+it('归档版本默认零且拒绝负数，更新版本不改变原始密文或附件关系', async (): Promise<void> => {
+  const { ingestionId } = await fixtures();
+  const before = await client.ingestionRecord.findUniqueOrThrow({ where: { id: ingestionId } });
+  expect(before.assignmentRevision).toBe(0);
+  await expect(client.ingestionRecord.update({ where: { id: ingestionId }, data: { assignmentRevision: -1 } })).rejects.toThrow();
+  const after = await client.ingestionRecord.update({ where: { id: ingestionId }, data: { assignmentRevision: { increment: 1 } } });
+  expect(after.assignmentRevision).toBe(1); expect(after.rawContent).toEqual(before.rawContent);
+  expect(after.contentHash).toBe(before.contentHash);
+});

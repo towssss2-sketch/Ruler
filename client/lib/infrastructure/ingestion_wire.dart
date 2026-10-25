@@ -8,11 +8,17 @@ const _invalid = ApiFailure('材料响应异常，请刷新重试。');
 /// 状态未知、正文损坏均整体拒绝，不能把错误显示为成功或空清单。
 IngestionItem readIngestionItem(Object? raw, {bool detail = false}) {
   final row = jsonObject(raw);
+  final revision = row.containsKey('assignmentRevision')
+      ? row['assignmentRevision']
+      : 0;
   final preview = row['preview'];
   final date = row['receivedAt'];
   final time = date is String ? DateTime.tryParse(date) : null;
   final text = row['rawContent'];
-  if (!ingestionStatuses.containsKey(row['status']) ||
+  if (revision is! int ||
+      revision < 0 ||
+      revision > 2147483647 ||
+      !ingestionStatuses.containsKey(row['status']) ||
       !ingestionChannels.containsKey(row['channel']) ||
       preview is! String ||
       preview.trim().isEmpty ||
@@ -24,6 +30,7 @@ IngestionItem readIngestionItem(Object? raw, {bool detail = false}) {
   }
   return IngestionItem(
     id: jsonText(row, 'id'),
+    assignmentRevision: revision,
     channel: row['channel'] as String,
     status: row['status'] as String,
     preview: preview,

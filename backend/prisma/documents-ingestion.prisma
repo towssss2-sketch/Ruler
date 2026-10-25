@@ -43,6 +43,8 @@ model IngestionRecord {
   attachmentKeys Json             @default("[]")
   aiResult       Json?
   contentHash    String           @db.Char(64)
+  // 人工撤回递增，阻止迟到的旧归档请求重新写入。
+  assignmentRevision Int          @default(0)
   matchedCaseId  String?          @db.Uuid
   status         IngestionStatus  @default(PENDING_MATCH)
   stage          IngestionStage   @default(RECEIVE)

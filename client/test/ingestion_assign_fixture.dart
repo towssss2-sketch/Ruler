@@ -40,12 +40,18 @@ class AssignmentFixture implements IngestionAssignment {
   Future<AssignmentReceipt> assign(
     String id,
     String caseId,
-    String category,
-  ) async {
+    String category, {
+    int revision = 0,
+  }) async {
     attempts++;
     await gate?.future;
     if (failAssign) throw const ApiFailure('归档失败，请保留选择重试。');
-    final result = await repository.assign(id, caseId, category);
+    final result = await repository.assign(
+      id,
+      caseId,
+      category,
+      revision: revision,
+    );
     if (loseResponse) {
       loseResponse = false;
       throw const ApiFailure('归档结果未确认，请重试。');

@@ -211,6 +211,23 @@ class MemoryExperience implements ExperienceRepository {
     );
   }
 
+  @override
+  void withdrawSample(String caseId, String documentId) {
+    final record = _record(caseId);
+    final file = record.files
+        .where((file) => file.id == documentId)
+        .firstOrNull;
+    if (file == null ||
+        record.files.any(
+          (other) => other.id != file.id && other.group == file.group,
+        )) {
+      throw const ExperienceFailure('归档文件已改变，暂不能撤回');
+    }
+    _cases[caseId] = record.copyWith(
+      files: record.files.where((file) => file.id != documentId).toList(),
+    );
+  }
+
   /// 同步写入独立虚构文件，让材料状态与案件示例在同一次调用中改变。
   @override
   void archiveSample(

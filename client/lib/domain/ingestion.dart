@@ -29,11 +29,13 @@ class IngestionItem {
     required this.receivedAt,
     this.rawContent,
     this.file,
+    this.assignmentRevision = 0,
   });
   final String id, channel, status, preview;
   final DateTime receivedAt;
   final String? rawContent;
   final IngestionFile? file;
+  final int assignmentRevision;
 }
 
 class IngestionReceipt {

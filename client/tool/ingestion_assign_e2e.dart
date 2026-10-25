@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'ingestion_return_e2e.dart';
 import 'dart:io';
 import 'package:ruler_client/domain/documents.dart';
 import 'package:ruler_client/domain/ingestion_files.dart';
@@ -53,8 +54,7 @@ Future<void> ingestionAssignScenario(
           )).documentId ==
           receipt.documentId,
     );
-    check((await inbox.detail(upload.id)).status == 'ASSIGNED');
-    check(!(await inbox.list()).items.any((item) => item.id == upload.id));
+    await verifyAssignedInbox(inbox, upload.id);
     await rereadAssignment(
       Platform.environment['RULER_E2E_URL']!,
       storage,
@@ -66,6 +66,7 @@ Future<void> ingestionAssignScenario(
       receipt.documentId,
       bytes,
     );
+    await returnArchiveScenario(first, upload.id, receipt, storage, bytes);
     await repository.removeCase(target.id);
   } finally {
     files.close();
@@ -142,4 +143,9 @@ Future<IngestionFileReceipt> uploadAssignment(
         ),
       )
       .resume();
+}
+
+Future<void> verifyAssignedInbox(ApiIngestion inbox, String id) async {
+  check((await inbox.detail(id)).status == 'ASSIGNED');
+  check(!(await inbox.list()).items.any((item) => item.id == id));
 }

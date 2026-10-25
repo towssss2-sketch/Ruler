@@ -36,20 +36,22 @@ class MemoryIngestionAssignment implements IngestionAssignment {
   Future<AssignmentReceipt> assign(
     String id,
     String caseId,
-    String category,
-  ) async {
+    String category, {
+    int revision = 0,
+  }) async {
     try {
       final receipt = inbox.assignExample(
         id,
         caseId,
         category,
-        (file, retry) => experience.archiveSample(
+        (file, receipt, retry) => experience.archiveSample(
           caseId,
-          id,
+          receipt.documentId,
           file.name,
           category,
           retry: retry,
         ),
+        revision: revision,
       );
       await refresh();
       return receipt;
