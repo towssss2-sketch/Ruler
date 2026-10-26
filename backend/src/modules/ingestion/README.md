@@ -21,7 +21,7 @@
 
 ## 后续拆分
 
-6A2A 已实现后述文件暂存接口。客户端选文件已由 6A2B1 接入；手动分类/指派并转正式 Document 已由 6A2B2 接入；自动规则匹配、文本提取/AI 分类、任务建议确认、重试队列和渠道适配仍待实现。文件分类保留现有 11 类（包括法院文件、服务合同）；不会用文字待定记录冒充文件归档。
+6A2A 已实现后述文件暂存接口。客户端选文件已由 6A2B1 接入；手动分类/指派并转正式 Document 已由 6A2B2 接入。6A3A 提供后述 PDF/DOCX 正文预览与规则候选；自动规则匹配、持久化提取结果/AI 分类、任务建议确认、重试队列和渠道适配仍待实现。文件分类保留现有 11 类（包括法院文件、服务合同）；不会用文字待定记录冒充文件归档。
 
 真实法院平台、短信权限、邮箱绑定和系统分享不在本轮范围；D-05/D-06/D-08/D-10 保持原状态。
 
@@ -58,3 +58,15 @@
 `POST /ingestion/:id/withdraw` 接收 caseId/documentId，通过统一案件授权后按案件→用户→归集加锁。只撤回当前 ASSIGNED 单一归档且无其他活动版本；文档软删除、归集回 PENDING_MATCH/matchedCaseId=null、assignmentRevision 递增、审计同事务，不触及存储或容量。重复请求读取原撤回审计但不复活忽略记录；新归档后旧文档请求冲突。
 
 迁移新增 assignmentRevision 默认 0、非负，列表/详情增加此字段；归档 revision 缺省 0，准备与提交均核对，旧客户端对撤回后的材料不能盲目归档。重新归档只忽略已软删历史版本，创建新文档，不复活旧对象身份。阶段仍为人工 MATCH，不启动提取/AI/重试队列。
+
+## 6A3A：按需正文预览
+
+`POST /ingestion/:id/preview` 仅接受空对象，返回 `{ attemptId, extraction, suggestion }`，`Cache-Control: private, no-store`。本人有效归集附件可预览，包括已忽略记录；无附件、删除或他人记录均 403。忙时 429，审计/数据库失败不返回正文。接口接受的键/URL/用户覆盖一律 400。
+
+`extraction` 为 `TEXT/text` 或 `MANUAL_REQUIRED/reason/retryable`。固定原因：`UNSUPPORTED_FORMAT`、`FILE_TOO_LARGE`、`CONTENT_LIMIT`、`NO_TEXT`、`INVALID_DOCUMENT`、`UNSUPPORTED_CONTENT`、`TIMEOUT`、`UNAVAILABLE`；只有后两者建议重试。扫描件/图片不调用 OCR，解析警告不输出部分正文，密码文件不绕过密码。原件可继续人工下载处理。
+
+`suggestion` 仅在正文成功时返回 ruleVersion/category/reason/caseNumbers/caseNumbersTruncated/requiresConfirmation；其余为 null。开头十二个非空行（最多前 1500 字符）中的独立标题命中才给候选；跨类别标题冲突不选择。案号最多十个，仅供确认，不访问案件库匹配或计算法律日期。未命中类别为 null，不缩减原有 11 类手工选择。
+
+有界内部读取绑定精确大小、MIME 与 If-Match，解析子进程不继承环境/输出日志；资源限制详见本轮验收报告。开始/结束审计只存固定状态与 attemptId，无正文、文件名、对象键；原 rawContent、status/stage、配额和原件均不改。进程崩溃留下开始记录，新请求可重试；本轮不是完整五阶段管道。无迁移、明文提取结果表或缓存，新依赖是原 v3 已指定的 pdf-parse/mammoth。客户端入口待 6A3B。
+
+运行测试会先 `npm run build`，因为真实子进程执行 `dist` 下的编译入口；不能用旧 dist 冒充当前代码测试。

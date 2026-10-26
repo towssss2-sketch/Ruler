@@ -6,6 +6,9 @@
     "node": "20.x"
   },
   "scripts": {
+    "pretest": "npm run build",
+    "pretest:coverage": "npm run build",
+    "pretest:auth": "npm run build",
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src test",
@@ -32,6 +35,8 @@
     "ali-oss": "6.23.0",
     "class-validator": "0.14.4",
     "ioredis": "5.11.0",
+    "mammoth": "1.13.0",
+    "pdf-parse": "2.4.5",
     "pino": "9.14.0",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.2",

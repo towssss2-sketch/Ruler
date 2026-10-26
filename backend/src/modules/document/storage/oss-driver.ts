@@ -4,6 +4,7 @@ import { StorageError, storageErrorCode } from './storage-error';
 import { downloadDisposition, objectMetadata, uploadHeaders, validateCopy, validateKey, validateTtl } from './storage-policy';
 import { SignedTransfer, StorageService, StoredObject, UploadRequest } from './storage.service';
 import { hashObjectStream, validateFingerprint } from './object-fingerprint';
+import { readObjectStream, validateRead } from './object-reader';
 
 /** 原生 OSS 适配器；不将 OSS 当作 S3 使用。本期只验证离线 SDK 契约，真实云接入另行批准。 */
 export class OssDriver extends StorageService {
@@ -70,6 +71,15 @@ export class OssDriver extends StorageService {
     try {
       const result = await this.client.getStream(key, { headers: { 'If-Match': etag } });
       return await hashObjectStream(result.stream, sizeBytes);
+    } catch { throw new StorageError('UNAVAILABLE'); }
+  }
+
+  /** 使用原生 OSS 条件流读取正文输入；真实云连接另行验收。 */
+  async read(key: string, sizeBytes: number, etag: string): Promise<Buffer> {
+    validateRead(key, sizeBytes, etag);
+    try {
+      const result = await this.client.getStream(key, { headers: { 'If-Match': etag } });
+      return await readObjectStream(result.stream, sizeBytes);
     } catch { throw new StorageError('UNAVAILABLE'); }
   }
 

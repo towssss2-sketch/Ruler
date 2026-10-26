@@ -18,6 +18,8 @@ export abstract class StorageService {
   abstract stat(key: string): Promise<StoredObject | null>;
   /** 从内部对象流计算 SHA-256，绑定长度及 ETag，不信任客户端提交的内容指纹。 */
   abstract fingerprint(key: string, sizeBytes: number, etag: string): Promise<string>;
+  /** 内部条件读取至多 10MiB 原件，用于正文预览；不签发或接受网络 URL。 */
+  abstract read(key: string, sizeBytes: number, etag: string): Promise<Buffer>;
   /** 释放本实例连接资源，不能影响其他驱动实例。 */
   abstract close(): void;
 }

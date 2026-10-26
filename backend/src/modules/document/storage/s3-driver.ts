@@ -6,6 +6,7 @@ import { StorageError, storageErrorCode } from './storage-error';
 import { downloadDisposition, objectMetadata, uploadHeaders, validateCopy, validateKey, validateTtl } from './storage-policy';
 import { SignedTransfer, StorageService, StoredObject, UploadRequest } from './storage.service';
 import { hashObjectStream, validateFingerprint } from './object-fingerprint';
+import { readObjectStream, validateRead } from './object-reader';
 
 /** MinIO 开发驱动：所有 SDK 调用留在适配器中，不将供应商响应或异常返回业务层。 */
 export class S3Driver extends StorageService {
@@ -86,6 +87,15 @@ export class S3Driver extends StorageService {
     try {
       const result = await this.client.send(new GetObjectCommand({ Bucket: this.config.bucket, Key: key, IfMatch: etag }));
       return await hashObjectStream(result.Body, sizeBytes);
+    } catch { throw new StorageError('UNAVAILABLE'); }
+  }
+
+  /** 正文读取仅走内部连接并绑定 ETag，超量或异常统一拒绝。 */
+  async read(key: string, sizeBytes: number, etag: string): Promise<Buffer> {
+    validateRead(key, sizeBytes, etag);
+    try {
+      const result = await this.client.send(new GetObjectCommand({ Bucket: this.config.bucket, Key: key, IfMatch: etag }));
+      return await readObjectStream(result.Body, sizeBytes);
     } catch { throw new StorageError('UNAVAILABLE'); }
   }
 
