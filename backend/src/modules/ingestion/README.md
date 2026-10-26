@@ -67,6 +67,6 @@
 
 `suggestion` 仅在正文成功时返回 ruleVersion/category/reason/caseNumbers/caseNumbersTruncated/requiresConfirmation；其余为 null。开头十二个非空行（最多前 1500 字符）中的独立标题命中才给候选；跨类别标题冲突不选择。案号最多十个，仅供确认，不访问案件库匹配或计算法律日期。未命中类别为 null，不缩减原有 11 类手工选择。
 
-有界内部读取绑定精确大小、MIME 与 If-Match，解析子进程不继承环境/输出日志；资源限制详见本轮验收报告。开始/结束审计只存固定状态与 attemptId，无正文、文件名、对象键；原 rawContent、status/stage、配额和原件均不改。进程崩溃留下开始记录，新请求可重试；本轮不是完整五阶段管道。无迁移、明文提取结果表或缓存，新依赖是原 v3 已指定的 pdf-parse/mammoth。客户端入口待 6A3B。
+有界内部读取绑定精确大小、MIME 与 If-Match，解析子进程不继承环境/输出日志；资源限制详见本轮验收报告。开始/结束审计只存固定状态与 attemptId，无正文、文件名、对象键；原 rawContent、status/stage、配额和原件均不改。进程崩溃留下开始记录，新请求可重试；本轮不是完整五阶段管道。无迁移、明文提取结果表或缓存，新依赖是原 v3 已指定的 pdf-parse/mammoth。6A3B 已接通客户端预览、固定原因说明和建议分类预填；仍由用户选择案件并确认归档，正文不持久缓存。
 
 运行测试会先 `npm run build`，因为真实子进程执行 `dist` 下的编译入口；不能用旧 dist 冒充当前代码测试。

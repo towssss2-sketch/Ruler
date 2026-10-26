@@ -83,13 +83,14 @@ async function dart(origin, emails, storageOrigin) {
     let stdout = '';
     child.stdout.on('data', chunk => { stdout += chunk; });
     child.stderr.resume(); // 不输出潜在包含请求凭据的原始异常。
-    const timer = setTimeout(() => { child.kill(); reject(new Error('客户端联调超时')); }, 120_000);
+    // 两组业务之间各自然跨一次 60 秒限流窗口；保留有限的整体执行预算。
+    const timer = setTimeout(() => { child.kill(); reject(new Error('客户端联调超时')); }, 180_000);
     child.on('error', () => { clearTimeout(timer); reject(new Error('无法运行 Dart 联调')); });
     child.on('exit', code => { clearTimeout(timer); resolveResult({ code, stdout }); });
   });
   if (result.code !== 0) throw new Error('真实 Dart 客户端联调失败');
   const summary = JSON.parse(result.stdout);
-  assert.equal(summary.passed, useTls ? 21 : 20);
+  assert.equal(summary.passed, useTls ? 22 : 21);
   assert.equal(summary.failed, 0);
   assert.equal(summary.skipped, 0);
   assert.equal(summary.tls, useTls ? 'LOCAL_TRUSTED_CERTIFICATE' : 'HTTP_LOOPBACK');

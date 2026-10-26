@@ -2,6 +2,7 @@ import 'party_e2e.dart';
 import 'ingestion_e2e.dart';
 import 'ingestion_assign_e2e.dart';
 import 'ingestion_file_e2e.dart';
+import 'ingestion_preview_e2e.dart';
 import 'package:ruler_client/domain/case_filters.dart';
 import 'case_conflict_e2e.dart';
 import 'case_edit_e2e.dart';
@@ -100,6 +101,8 @@ Future<void> inboxScenarios(
   await ingestionAssignScenario(first, emails[0], emails[1], password);
   _scenarios.add('真实待定附件按类归档、幂等指派、重登按类下载及越权拒绝');
   _scenarios.add('真实归档去向、撤回待定、版本防重放、重新分类及下载字节一致');
+  await ingestionPreviewScenario(first, emails[0], emails[1], password);
+  _scenarios.add('真实 PDF/DOCX 正文提取、候选分类、重登与越权拒绝、原件保留及显式确认归档');
 }
 
 /// 只输出固定场景结果，不包含当事人资料、登录凭据或签名。

@@ -44,7 +44,7 @@ class _IngestionDetailDialogState extends State<IngestionDetailDialog> {
               if (item.file != null) ...[
                 Text('附件：${item.file!.name}'),
                 Text('${item.file!.size} 字节 · ${item.file!.mimeType}'),
-                const Text('以下是接收说明，尚未提取文件正文。'),
+                const Text('以下是接收说明。文件正文可从材料列表的正文预览入口查看。'),
               ],
               // 纯文本展示，不把文内链接转换为可访问或自动下载的入口。
               SelectableText(item.rawContent!),
