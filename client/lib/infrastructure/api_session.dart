@@ -76,6 +76,7 @@ class ApiSession {
     String path, {
     Map<String, Object?>? data,
     Map<String, Object?>? query,
+    Duration? receiveTimeout,
   }) async {
     if (!authenticated) throw _expired;
     final sentAccess = _access;
@@ -85,12 +86,20 @@ class ApiSession {
       data,
       query: query,
       access: sentAccess,
+      receiveTimeout: receiveTimeout,
     );
     if (response.statusCode == 401) {
       // 较晚到达的旧 401 复用已轮换凭据，不再次消费旧刷新令牌。
       if (sentAccess == _access) await _renew();
       if (!authenticated) throw _expired;
-      response = await _send(method, path, data, query: query, access: _access);
+      response = await _send(
+        method,
+        path,
+        data,
+        query: query,
+        access: _access,
+        receiveTimeout: receiveTimeout,
+      );
       if (response.statusCode == 401) {
         _expire();
         throw _expired;
@@ -132,6 +141,7 @@ class ApiSession {
     Map<String, Object?>? data, {
     Map<String, Object?>? query,
     String? access,
+    Duration? receiveTimeout,
   }) async {
     if (_closed) throw _expired;
     if (!path.startsWith('/') ||
@@ -147,6 +157,7 @@ class ApiSession {
         cancelToken: _cancel,
         options: Options(
           method: method,
+          receiveTimeout: receiveTimeout,
           headers: {if (access != null) 'Authorization': 'Bearer $access'},
         ),
       );

@@ -11,18 +11,21 @@ class IngestionAssignDialog extends StatefulWidget {
     required this.item,
     required this.repository,
     this.offline = false,
+    this.initialCategory,
     super.key,
   });
   final IngestionItem item;
   final IngestionAssignment repository;
   final bool offline;
+  final String? initialCategory;
   @override
   State<IngestionAssignDialog> createState() => _IngestionAssignDialogState();
 }
 
 class _IngestionAssignDialogState extends State<IngestionAssignDialog> {
   OnlineCase? _selected;
-  String? _category, _error;
+  late String? _category = widget.initialCategory;
+  String? _error;
   bool _busy = false;
   Future<void> _choose() async {
     final result = await showDialog<OnlineCase>(
@@ -94,6 +97,8 @@ class _IngestionAssignDialogState extends State<IngestionAssignDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(widget.item.file!.name),
+          if (widget.initialCategory != null)
+            const Text('已带入建议分类，可修改；仍需选择案件并确认归档。'),
           const SizedBox(height: 12),
           Text(
             widget.offline

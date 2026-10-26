@@ -9,6 +9,7 @@ import '../infrastructure/api_ingestion_archive.dart';
 import '../application/online_provider.dart';
 import '../infrastructure/api_repository.dart';
 import '../infrastructure/api_ingestion_assignment.dart';
+import '../infrastructure/api_ingestion_preview.dart';
 
 class OnlineIngestionEntry extends ConsumerWidget {
   const OnlineIngestionEntry({required this.repository, super.key});
@@ -18,6 +19,10 @@ class OnlineIngestionEntry extends ConsumerWidget {
     repository: repository,
     attachments: ref.watch(ingestionFilesProvider),
     files: ref.watch(deviceFilesProvider),
+    preview: switch (ref.watch(onlineProvider)) {
+      ApiRepository api => ApiIngestionPreview(api.session),
+      _ => null,
+    },
     archive: switch (ref.watch(onlineProvider)) {
       ApiRepository api => ApiIngestionArchive(api.session),
       _ => null,

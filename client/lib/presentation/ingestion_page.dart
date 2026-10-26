@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../domain/ingestion.dart';
+import '../domain/ingestion_preview.dart';
+import 'ingestion_preview_dialog.dart';
+import 'ingestion_item_card.dart';
 import '../domain/ingestion_archive.dart';
 import 'ingestion_archive_dialog.dart';
 import '../domain/ingestion_assignment.dart';
@@ -22,9 +25,11 @@ class IngestionPage extends StatefulWidget {
     this.assignment,
     this.archive,
     this.openCase,
+    this.preview,
     super.key,
   });
   final IngestionRepository repository;
+  final IngestionPreview? preview;
   final bool offline;
   final IngestionArchive? archive;
   final Future<void> Function(OnlineCase)? openCase;
@@ -38,6 +43,7 @@ class IngestionPage extends StatefulWidget {
 
 class _IngestionPageState extends State<IngestionPage> {
   int _page = 1;
+  bool _previewing = false;
   bool _history = false, _busy = false, _confirming = false;
   late Future<OnlinePage<IngestionItem>> _result = _read();
   Future<OnlinePage<IngestionItem>> _read() {
@@ -143,7 +149,7 @@ class _IngestionPageState extends State<IngestionPage> {
     }
   }
 
-  Future<void> _assign(IngestionItem item) async {
+  Future<void> _assign(IngestionItem item, {String? category}) async {
     final notice = await showDialog<String>(
       context: context,
       useRootNavigator: false,
@@ -152,6 +158,7 @@ class _IngestionPageState extends State<IngestionPage> {
         item: item,
         repository: widget.assignment!,
         offline: widget.offline,
+        initialCategory: category,
       ),
     );
     if (!mounted) return;
@@ -189,6 +196,49 @@ class _IngestionPageState extends State<IngestionPage> {
     builder: (_) =>
         IngestionDetailDialog(repository: widget.repository, id: item.id),
   );
+
+  Future<void> _preview(IngestionItem item) async {
+    if (_previewing || _busy) return;
+    _previewing = true;
+    try {
+      final category = await showDialog<String>(
+        context: context,
+        useRootNavigator: false,
+        builder: (_) => IngestionPreviewDialog(
+          id: item.id,
+          name: item.file!.name,
+          repository: widget.preview!,
+          offline: widget.offline,
+          canAssign:
+              item.status == 'PENDING_MATCH' && widget.assignment != null,
+        ),
+      );
+      if (category == null || !mounted) return;
+      setState(() => _busy = true);
+      IngestionItem? current;
+      try {
+        current = await widget.repository.detail(item.id);
+        if (!mounted) return;
+        if (current.status != 'PENDING_MATCH' ||
+            current.file?.id != item.file?.id) {
+          _notice('材料状态已改变，请刷新核对后再归档。');
+          current = null;
+        }
+      } catch (error) {
+        if (mounted) _notice(onlineError(error));
+      } finally {
+        if (mounted) setState(() => _busy = false);
+      }
+      if (!mounted) return;
+      if (current == null) {
+        _load(1);
+        return;
+      }
+      await _assign(current, category: category);
+    } finally {
+      _previewing = false;
+    }
+  }
 
   @override
   Widget build(BuildContext context) => PopScope(
@@ -303,53 +353,26 @@ class _IngestionPageState extends State<IngestionPage> {
     ],
   );
 
-  Widget _card(IngestionItem item) => Card(
-    key: ValueKey(item.id),
-    child: Padding(
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '${ingestionChannels[item.channel]} · ${ingestionStatuses[item.status]}',
-          ),
-          Text(
-            '接收时间（北京时间）：${item.receivedAt.toUtc().add(const Duration(hours: 8)).toIso8601String().substring(0, 16).replaceAll('T', ' ')}',
-          ),
-          const SizedBox(height: 8),
-          if (item.file != null)
-            Text('附件：${item.file!.name} · ${item.file!.size} 字节'),
-          Text(item.preview, maxLines: 4, overflow: TextOverflow.ellipsis),
-          Wrap(
-            spacing: 12,
-            children: [
-              TextButton(
-                onPressed: () => _detail(item),
-                child: Text(item.file == null ? '查看原文' : '查看材料'),
-              ),
-              if (item.file != null &&
-                  widget.attachments != null &&
-                  widget.files != null)
-                OnlineAction(label: '下载原件', run: () => _save(item)),
-              if (item.file != null && widget.offline) const Text('虚构示例，无真实原件'),
-              if (item.status == 'ASSIGNED' && widget.archive != null)
-                TextButton(
-                  onPressed: () => _archive(item),
-                  child: const Text('归档去向'),
-                ),
-              if (item.status == 'PENDING_MATCH' &&
-                  item.file != null &&
-                  widget.assignment != null)
-                TextButton(
-                  onPressed: () => _assign(item),
-                  child: const Text('分类归档'),
-                ),
-              if (item.status == 'PENDING_MATCH')
-                OnlineAction(label: '忽略材料', run: () => _ignore(item)),
-            ],
-          ),
-        ],
-      ),
-    ),
+  Widget _card(IngestionItem item) => IngestionItemCard(
+    item: item,
+    offline: widget.offline,
+    detail: () => _detail(item),
+    preview: item.file != null && widget.preview != null
+        ? () => _preview(item)
+        : null,
+    save:
+        item.file != null && widget.attachments != null && widget.files != null
+        ? () => _save(item)
+        : null,
+    archive: item.status == 'ASSIGNED' && widget.archive != null
+        ? () => _archive(item)
+        : null,
+    assign:
+        item.status == 'PENDING_MATCH' &&
+            item.file != null &&
+            widget.assignment != null
+        ? () => _assign(item)
+        : null,
+    ignore: item.status == 'PENDING_MATCH' ? () => _ignore(item) : null,
   );
 }

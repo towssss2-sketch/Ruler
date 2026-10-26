@@ -70,7 +70,7 @@ void lifecycle() {
     expect(find.textContaining('附件：虚构服务合同示例.pdf'), findsOneWidget);
     await captureOnline(tester, fileName: 'client-ingestion-file.png');
     await tap(tester, '查看材料');
-    expect(find.text('以下是接收说明，尚未提取文件正文。'), findsOneWidget);
+    expect(find.text('以下是接收说明。文件正文可从材料列表的正文预览入口查看。'), findsOneWidget);
     await tap(tester, '关闭');
     await tap(tester, '下载原件');
     expect(device.savedName, '虚构服务合同示例.pdf');
