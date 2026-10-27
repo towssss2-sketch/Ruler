@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 const target = name => new URL(`../test-results/${name}`, import.meta.url);
 const data = JSON.parse(readFileSync(target('client-api-validation.json'), 'utf8'));
 assert.equal(data.transport, 'REAL_DART_DIO_NEST_POSTGRES_REDIS_MINIO');
-assert.equal(data.passed, 21);
+assert.equal(data.passed, 22);
 assert.equal(data.failed, 0);
 assert.equal(data.skipped, 0);
 assert.equal(data.scenarios.length, data.passed);
@@ -11,7 +11,7 @@ const escape = text => String(text).replaceAll('&', '&amp;').replaceAll('<', '&l
 writeFileSync(target('client-api-acceptance.html'), `<!doctype html><html lang="zh-CN"><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>RULER 客户端真实联调</title>
 <style>body{font:16px/1.8 system-ui;max-width:900px;margin:2rem auto;padding:1rem}li{margin:.6rem 0}</style>
-<h1>客户端真实登录、案件、文件与任务联调</h1><p>21 项通过，0 失败，0 跳过。</p>
+<h1>客户端真实登录、案件、文件与任务联调</h1><p>22 项通过，0 失败，0 跳过。</p>
 <p>实际运行应用使用的 Dart/Dio 会话与仓库，连接真实 Nest HTTP、PostgreSQL、Redis、MinIO。
 使用随机隔离数据库及虚构账号；测试后清理本次数据。接口调用没有替换成内存演示。</p>
 <ol>${data.scenarios.map(name => `<li>通过：${escape(name)}</li>`).join('')}</ol>

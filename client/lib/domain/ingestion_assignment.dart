@@ -6,7 +6,11 @@ class AssignmentReceipt {
 }
 
 abstract interface class IngestionAssignment {
-  Future<OnlinePage<OnlineCase>> cases({String keyword = '', int page = 1});
+  Future<OnlinePage<OnlineCase>> cases({
+    String keyword = '',
+    int page = 1,
+    String? caseNo,
+  });
   Future<AssignmentReceipt> assign(
     String id,
     String caseId,

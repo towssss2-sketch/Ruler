@@ -30,10 +30,11 @@ class AssignmentFixture implements IngestionAssignment {
   Future<OnlinePage<OnlineCase>> cases({
     String keyword = '',
     int page = 1,
+    String? caseNo,
   }) async {
-    queries.add('$keyword:$page');
+    queries.add(caseNo == null ? '$keyword:$page' : 'exact:$caseNo:$page');
     if (failCases) throw const ApiFailure('案件列表暂不可用。');
-    return repository.cases(keyword: keyword, page: page);
+    return repository.cases(keyword: keyword, page: page, caseNo: caseNo);
   }
 
   @override

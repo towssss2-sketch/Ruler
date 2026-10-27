@@ -3,14 +3,37 @@ import '../domain/online.dart';
 import '../domain/documents.dart';
 import 'api_session.dart';
 import 'document_wire.dart';
+import 'case_match_wire.dart';
+import '../domain/case_fields.dart';
 
 class ApiIngestionAssignment implements IngestionAssignment {
   ApiIngestionAssignment(this.session, this.repository);
   final ApiSession session;
   final OnlineRepository repository;
   @override
-  Future<OnlinePage<OnlineCase>> cases({String keyword = '', int page = 1}) =>
-      repository.cases(keyword: keyword, page: page);
+  Future<OnlinePage<OnlineCase>> cases({
+    String keyword = '',
+    int page = 1,
+    String? caseNo,
+  }) async {
+    if (caseNo == null) return repository.cases(keyword: keyword, page: page);
+    final number = normalizeCaseNumber(caseNo);
+    validateCaseMatch(number, page);
+    return readCaseMatches(
+      await session.request(
+        'GET',
+        '/cases',
+        query: {
+          'caseNo': number,
+          'page': page,
+          'pageSize': 20,
+          if (keyword.trim().isNotEmpty) 'keyword': keyword.trim(),
+        },
+      ),
+      number,
+      page,
+    );
+  }
 
   @override
   Future<AssignmentReceipt> assign(

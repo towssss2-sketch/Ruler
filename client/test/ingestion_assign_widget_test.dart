@@ -93,6 +93,7 @@ void lifecycle() {
     }
     await tester.tap(find.byTooltip('搜索案件'));
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('下一页').last);
     await tester.tap(find.text('下一页').last);
     await tester.pumpAndSettle();
     expect(f.queries.last, '虚构:2');

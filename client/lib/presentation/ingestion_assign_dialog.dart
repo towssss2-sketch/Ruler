@@ -12,12 +12,14 @@ class IngestionAssignDialog extends StatefulWidget {
     required this.repository,
     this.offline = false,
     this.initialCategory,
+    this.caseNumbers = const [],
     super.key,
   });
   final IngestionItem item;
   final IngestionAssignment repository;
   final bool offline;
   final String? initialCategory;
+  final List<String> caseNumbers;
   @override
   State<IngestionAssignDialog> createState() => _IngestionAssignDialogState();
 }
@@ -31,7 +33,10 @@ class _IngestionAssignDialogState extends State<IngestionAssignDialog> {
     final result = await showDialog<OnlineCase>(
       context: context,
       useRootNavigator: false,
-      builder: (_) => IngestionCasePicker(repository: widget.repository),
+      builder: (_) => IngestionCasePicker(
+        repository: widget.repository,
+        caseNumbers: widget.caseNumbers,
+      ),
     );
     if (mounted && result != null) {
       setState(() {

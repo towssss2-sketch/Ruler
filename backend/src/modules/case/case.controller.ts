@@ -2,7 +2,7 @@ import { BadRequestException, Body, Controller, Delete, Get, HttpCode, Param, Pa
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthPrincipal, CurrentUser } from '../auth/auth-decorators';
 import { CaseAccessGuard } from './case-access.guard';
-import { CaseInput, CaseQuery, PageInput, caseInput, dto } from './case-input';
+import { CaseInput, PageInput, caseInput, caseQuery, dto } from './case-input';
 import { CaseDetail, CaseSummary } from './case-view.service';
 import { CaseReadService, CasePage } from './case-read.service';
 import { CaseWriteService } from './case-write.service';
@@ -26,7 +26,7 @@ export class CaseController {
   @Get() @ApiOperation({ summary: '我的案件：搜索、筛选、分页与更新时间排序' })
   @caseListQueries()
   list(@CurrentUser() principal: AuthPrincipal, @Query() query: unknown): Promise<CasePage> {
-    return this.read.list(principal.userId, dto(CaseQuery, query));
+    return this.read.list(principal.userId, caseQuery(query));
   }
 
   /** 每次经资源守卫核验归属后返回详情。 */

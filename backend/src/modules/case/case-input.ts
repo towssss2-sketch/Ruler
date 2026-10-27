@@ -38,12 +38,23 @@ export class PageInput {
   @IsString() @Matches(/^([1-9]|[1-9]\d|100)$/) pageSize = '20';
 }
 export class CaseQuery extends PageInput {
+  @ValidateIf((_, value: unknown): boolean => value !== undefined)
+  @IsString() @Length(1, 80) @Matches(/^\([12]\d{3}\)[\p{Script=Han}\d]{1,60}号$/u) caseNo?: string;
   @IsOptional() @IsString() @Length(1, 128) keyword?: string;
   @IsOptional() @IsString() @Length(1, 128) court?: string;
   @IsOptional() @IsEnum(CaseStage) stage?: CaseStage;
   @IsOptional() @IsEnum(CaseStatus) status?: CaseStatus;
   @IsIn(['owned', 'collaborated']) group = 'owned';
   @IsIn(['asc', 'desc']) sort: 'asc' | 'desc' = 'desc';
+}
+
+/** 精确案号沿用建案的括号/空白归一化；不把非法值降级为全量列表。 */
+export function caseQuery(input: unknown): CaseQuery {
+  const raw = input && typeof input === 'object' && !Array.isArray(input) ? { ...input } : input;
+  if (raw && typeof raw === 'object' && 'caseNo' in raw && typeof raw.caseNo === 'string') {
+    raw.caseNo = raw.caseNo.replaceAll('（', '(').replaceAll('）', ')').replace(/\s/g, '');
+  }
+  return dto(CaseQuery, raw);
 }
 
 /** 校验普通 JSON 对象，拒绝未知字段/原型字段；错误不包含输入值。 */

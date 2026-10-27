@@ -10,6 +10,7 @@ import 'package:ruler_client/infrastructure/api_repository.dart';
 import 'package:ruler_client/infrastructure/api_session.dart';
 import 'package:ruler_client/infrastructure/storage_transfer.dart';
 import 'connected_e2e.dart' show check, forbidden;
+import 'case_match_e2e.dart';
 
 /// 真正上传有效 PDF/DOCX，由服务器解析；同一客户端仓库读取结果，不使用协议替身。
 Future<void> ingestionPreviewScenario(
@@ -29,7 +30,14 @@ Future<void> ingestionPreviewScenario(
       final result = await previewFile(first, files, extension);
       if (extension == 'docx') {
         await previewReopen(result.id, ownerEmail, otherEmail, password);
-        await confirmSuggestion(first, result.id, result.category!);
+        await confirmSuggestion(
+          first,
+          result.id,
+          result.category!,
+          result.number!,
+          otherEmail,
+          password,
+        );
       } else {
         await ApiIngestion(first).ignore(result.id);
       }
@@ -39,7 +47,7 @@ Future<void> ingestionPreviewScenario(
   }
 }
 
-Future<({String id, String? category})> previewFile(
+Future<({String id, String? category, String? number})> previewFile(
   ApiSession session,
   ApiIngestionFiles files,
   String extension,
@@ -84,7 +92,11 @@ Future<({String id, String? category})> previewFile(
           base64Encode(bytes),
     );
   });
-  return (id: receipt.id, category: result.suggestion!.category);
+  return (
+    id: receipt.id,
+    category: result.suggestion!.category,
+    number: result.suggestion!.caseNumbers.firstOrNull,
+  );
 }
 
 Future<void> previewReopen(
@@ -117,19 +129,24 @@ Future<void> confirmSuggestion(
   ApiSession session,
   String id,
   String category,
+  String number,
+  String otherEmail,
+  String password,
 ) async {
   final repository = ApiRepository(session);
-  final target = await repository.createCase(
-    '(2026)虚构民初90号',
-    '虚构正文确认',
-    '虚构法院',
-    '虚构甲',
-  );
+  final target = await repository.createCase(number, '虚构正文确认', '虚构法院', '虚构甲');
   try {
+    final matchedId = await verifyCaseNumberMatch(
+      session,
+      number,
+      target.id,
+      otherEmail,
+      password,
+    );
     final document = await ApiIngestionAssignment(
       session,
       repository,
-    ).assign(id, target.id, category);
+    ).assign(id, matchedId, category);
     check(document.category == 'SERVICE_CONTRACT');
     check((await ApiIngestion(session).detail(id)).status == 'ASSIGNED');
     check(

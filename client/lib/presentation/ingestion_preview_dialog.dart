@@ -90,26 +90,35 @@ class _IngestionPreviewDialogState extends State<IngestionPreviewDialog> {
         ),
       ),
     ),
-    actions: [
-      TextButton(
-        onPressed: () => Navigator.pop(context),
-        child: const Text('关闭'),
-      ),
-      if (!_busy && (_error != null || _result?.retryable == true))
-        OutlinedButton(onPressed: _load, child: const Text('重试提取')),
-      if (!_busy && _result?.text != null)
-        TextButton(
-          onPressed: _load,
-          child: Text(widget.offline ? '重看示例' : '重新提取'),
-        ),
-      if (!_busy && widget.canAssign && _result?.suggestion?.category != null)
-        FilledButton(
-          onPressed: () =>
-              Navigator.pop(context, _result!.suggestion!.category),
-          child: const Text('按建议选择分类'),
-        ),
-    ],
+    actions: _actions(),
   );
+
+  List<Widget> _actions() => [
+    TextButton(
+      onPressed: () => Navigator.pop(context),
+      child: const Text('关闭'),
+    ),
+    if (!_busy && (_error != null || _result?.retryable == true))
+      OutlinedButton(onPressed: _load, child: const Text('重试提取')),
+    if (!_busy && _result?.text != null)
+      TextButton(
+        onPressed: _load,
+        child: Text(widget.offline ? '重看示例' : '重新提取'),
+      ),
+    if (!_busy && widget.canAssign && _result?.suggestion?.category != null)
+      FilledButton(
+        onPressed: () => Navigator.pop(context, _result!.suggestion!),
+        child: const Text('按建议选择分类'),
+      ),
+    if (!_busy &&
+        widget.canAssign &&
+        _result?.suggestion?.category == null &&
+        (_result?.suggestion?.caseNumbers.isNotEmpty ?? false))
+      FilledButton(
+        onPressed: () => Navigator.pop(context, _result!.suggestion!),
+        child: const Text('按案号选择案件'),
+      ),
+  ];
 
   List<Widget> _content(IngestionPreviewResult result) {
     if (result.reason != null) {
