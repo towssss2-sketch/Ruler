@@ -17,7 +17,7 @@ function model(name: string): Prisma.DMMF.Model {
 describe('原始需求实体与通用列契约', (): void => {
   it('全部业务实体、鉴权实体、上传票据及阶段 0 探针均存在', (): void => {
     expect(Prisma.dmmf.datamodel.models.map((value): string => value.name).sort())
-      .toEqual([...businessModels, 'DocumentUpload', 'IngestionUpload', 'IngestionFile', 'EnvironmentProbe'].sort());
+      .toEqual([...businessModels, 'DocumentUpload', 'IngestionUpload', 'IngestionFile', 'IngestionPreviewAttempt', 'EnvironmentProbe'].sort());
   });
   it.each(businessModels)('%s 保留 UUID 主键、创建/更新/软删除列', (name: string): void => {
     const value = model(name);

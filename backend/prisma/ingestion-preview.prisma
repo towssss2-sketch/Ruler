@@ -1,0 +1,23 @@
+// 仅保存正文提取尝试的状态元数据，不存正文、分类、案号或对象地址。
+enum PreviewAttemptStatus {
+  RUNNING
+  SUCCEEDED
+  MANUAL_REQUIRED
+  INTERRUPTED
+}
+
+model IngestionPreviewAttempt {
+  id             String               @id @default(uuid()) @db.Uuid
+  ingestionId    String               @db.Uuid
+  userId         String               @db.Uuid
+  status         PreviewAttemptStatus @default(RUNNING)
+  reason         String?              @db.VarChar(32)
+  startedAt      DateTime             @default(now()) @db.Timestamptz(3)
+  leaseExpiresAt DateTime             @db.Timestamptz(3)
+  finishedAt     DateTime?            @db.Timestamptz(3)
+
+  file IngestionFile @relation(fields: [ingestionId, userId], references: [ingestionId, userId], onDelete: Restrict)
+
+  @@index([ingestionId, startedAt, id])
+  @@index([userId, status, leaseExpiresAt])
+}

@@ -11,6 +11,7 @@ import 'package:ruler_client/infrastructure/api_session.dart';
 import 'package:ruler_client/infrastructure/storage_transfer.dart';
 import 'connected_e2e.dart' show check, forbidden;
 import 'case_match_e2e.dart';
+import 'preview_attempt_e2e.dart';
 
 /// 真正上传有效 PDF/DOCX，由服务器解析；同一客户端仓库读取结果，不使用协议替身。
 Future<void> ingestionPreviewScenario(
@@ -26,6 +27,7 @@ Future<void> ingestionPreviewScenario(
     StorageTransfer({Platform.environment['RULER_E2E_STORAGE']!}),
   );
   try {
+    await verifyFailedAttempts(first, files);
     for (final extension in ['pdf', 'docx']) {
       final result = await previewFile(first, files, extension);
       if (extension == 'docx') {
@@ -84,6 +86,7 @@ Future<({String id, String? category, String? number})> previewFile(
     check(result.suggestion!.caseNumbers.single == '(2026)虚构民初90号');
   }
   check((await api.preview(receipt.id)).attemptId != result.attemptId);
+  await verifyPreviewAttempts(session, receipt.id, 2);
   final row = await inbox.detail(receipt.id);
   check(row.status == 'PENDING_MATCH' && row.assignmentRevision == 0);
   await files.download(row.id, row.file!, (stream) async {
@@ -109,6 +112,7 @@ Future<void> previewReopen(
   final reopened = ApiSession(origin), other = ApiSession(origin);
   try {
     await reopened.login(email, password);
+    await verifyPreviewAttempts(reopened, id, 2);
     check(
       (await ApiIngestionPreview(reopened).preview(id)).suggestion!.category ==
           'SERVICE_CONTRACT',
@@ -116,6 +120,9 @@ Future<void> previewReopen(
     await other.login(otherEmail, password);
     await forbidden(() async {
       await ApiIngestionPreview(other).preview(id);
+    });
+    await forbidden(() async {
+      await ApiIngestionPreview(other).attempts(id);
     });
     await reopened.logout();
     await other.logout();

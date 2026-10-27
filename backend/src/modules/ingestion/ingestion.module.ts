@@ -1,6 +1,7 @@
 import { IngestionArchiveController, IngestionWithdrawGuard } from './ingestion-archive.controller';
 import { IngestionArchiveService } from './ingestion-archive.service';
 import { IngestionPreviewController } from './extraction/ingestion-preview.controller';
+import { PreviewAttemptService } from './extraction/preview-attempt.service';
 import { IngestionPreviewService } from './extraction/ingestion-preview.service';
 import { DocumentTextExtractor } from './extraction/document-text-extractor';
 import { ResourceAccessModule } from '../case/resource-access.module';
@@ -23,7 +24,7 @@ import { IngestionFileReadService } from './ingestion-file-read.service';
 import { IngestionFileCleanupService } from './ingestion-file-cleanup.service';
 
 @Module({ imports: [PrismaModule, StorageModule, ResourceAccessModule], controllers: [IngestionPreviewController, IngestionArchiveController, IngestionController, IngestionFileController, IngestionAssignController],
-  providers: [IngestionPreviewService, DocumentTextExtractor, IngestionArchiveService, IngestionWithdrawGuard, IngestionAssignGuard, IngestionAssignService, IngestionAssignTicketService, IngestionService, IngestionViewService, IngestionFileUploadService, IngestionFileRegisterService,
+  providers: [PreviewAttemptService, IngestionPreviewService, DocumentTextExtractor, IngestionArchiveService, IngestionWithdrawGuard, IngestionAssignGuard, IngestionAssignService, IngestionAssignTicketService, IngestionService, IngestionViewService, IngestionFileUploadService, IngestionFileRegisterService,
     IngestionFileReadService, IngestionFileCleanupService,
   { provide: EncryptionService, useFactory: (): EncryptionService => configuredCipher(process.env) }] })
 export class IngestionModule {}

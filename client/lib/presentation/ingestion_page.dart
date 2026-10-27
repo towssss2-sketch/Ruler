@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../domain/ingestion.dart';
 import '../domain/ingestion_preview.dart';
 import 'ingestion_preview_dialog.dart';
+import 'preview_attempts_dialog.dart';
+import '../domain/preview_attempts.dart';
 import 'ingestion_item_card.dart';
 import '../domain/ingestion_archive.dart';
 import 'ingestion_archive_dialog.dart';
@@ -368,6 +370,17 @@ class _IngestionPageState extends State<IngestionPage> {
     detail: () => _detail(item),
     preview: item.file != null && widget.preview != null
         ? () => _preview(item)
+        : null,
+    attempts: item.file != null && widget.preview is PreviewAttempts
+        ? () async {
+            final retry = await showPreviewAttempts(
+              context,
+              item.id,
+              widget.preview! as PreviewAttempts,
+              widget.offline,
+            );
+            if (mounted && retry == true) await _preview(item);
+          }
         : null,
     save:
         item.file != null && widget.attachments != null && widget.files != null

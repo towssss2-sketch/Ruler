@@ -2,12 +2,27 @@ import '../domain/documents.dart';
 import '../domain/ingestion_preview.dart';
 import '../domain/online.dart';
 import 'api_session.dart';
+import '../domain/preview_attempts.dart';
+import 'preview_attempt_wire.dart';
 
 const _invalidPreview = ApiFailure('正文预览响应格式异常，请稍后重试。');
 
-class ApiIngestionPreview implements IngestionPreview {
+class ApiIngestionPreview implements IngestionPreview, PreviewAttempts {
   ApiIngestionPreview(this.session);
   final ApiSession session;
+  @override
+  Future<OnlinePage<PreviewAttempt>> attempts(String id, {int page = 1}) async {
+    if (page < 1 || page > 9999) throw const ApiFailure('页码无效。');
+    return readPreviewAttempts(
+      await session.request(
+        'GET',
+        '/ingestion/${Uri.encodeComponent(id)}/preview-attempts',
+        query: {'page': page, 'pageSize': 20},
+      ),
+      page,
+    );
+  }
+
   @override
   Future<IngestionPreviewResult> preview(String id) async {
     final row = jsonObject(

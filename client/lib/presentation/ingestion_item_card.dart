@@ -12,12 +12,18 @@ class IngestionItemCard extends StatelessWidget {
     this.assign,
     this.archive,
     this.preview,
+    this.attempts,
     super.key,
   });
   final IngestionItem item;
   final bool offline;
   final Future<void> Function() detail;
-  final Future<void> Function()? save, ignore, assign, archive, preview;
+  final Future<void> Function()? save,
+      ignore,
+      assign,
+      archive,
+      preview,
+      attempts;
 
   @override
   Widget build(BuildContext context) => Card(
@@ -55,6 +61,8 @@ class IngestionItemCard extends StatelessWidget {
           onPressed: preview,
           child: Text(offline ? '查看正文示例' : '提取正文'),
         ),
+      if (attempts != null)
+        TextButton(onPressed: attempts, child: const Text('提取记录')),
       if (save != null) OnlineAction(label: '下载原件', run: save!),
       if (item.file != null && offline) const Text('虚构示例，无真实原件'),
       if (archive != null)

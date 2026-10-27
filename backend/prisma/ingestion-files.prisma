@@ -35,6 +35,7 @@ model IngestionFile {
   updatedAt   DateTime @updatedAt @db.Timestamptz(3)
 
   ingestion IngestionRecord @relation(fields: [ingestionId, userId], references: [id, userId], onDelete: Restrict)
+  previewAttempts IngestionPreviewAttempt[]
 
   @@unique([ingestionId, userId])
 }

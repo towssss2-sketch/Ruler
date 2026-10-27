@@ -15,7 +15,6 @@ import 'ingestion_page.dart';
 import 'experience_detail_page.dart';
 import '../infrastructure/memory_ingestion_archive.dart';
 import '../infrastructure/memory_ingestion_assignment.dart';
-import '../infrastructure/memory_ingestion_preview.dart';
 
 class ExperienceListPage extends ConsumerStatefulWidget {
   const ExperienceListPage({super.key});
@@ -42,7 +41,7 @@ class _ExperienceListPageState extends ConsumerState<ExperienceListPage> {
       builder: (_) => IngestionPage(
         repository: ref.read(experienceIngestionProvider),
         offline: true,
-        preview: MemoryIngestionPreview(ref.read(experienceIngestionProvider)),
+        preview: ref.read(experiencePreviewProvider),
         archive: MemoryIngestionArchive(
           ref.read(experienceIngestionProvider),
           ref.read(experienceRepositoryProvider),
