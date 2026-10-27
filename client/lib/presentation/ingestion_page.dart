@@ -149,7 +149,11 @@ class _IngestionPageState extends State<IngestionPage> {
     }
   }
 
-  Future<void> _assign(IngestionItem item, {String? category}) async {
+  Future<void> _assign(
+    IngestionItem item, {
+    String? category,
+    List<String> caseNumbers = const [],
+  }) async {
     final notice = await showDialog<String>(
       context: context,
       useRootNavigator: false,
@@ -159,6 +163,7 @@ class _IngestionPageState extends State<IngestionPage> {
         repository: widget.assignment!,
         offline: widget.offline,
         initialCategory: category,
+        caseNumbers: caseNumbers,
       ),
     );
     if (!mounted) return;
@@ -201,7 +206,7 @@ class _IngestionPageState extends State<IngestionPage> {
     if (_previewing || _busy) return;
     _previewing = true;
     try {
-      final category = await showDialog<String>(
+      final suggestion = await showDialog<PreviewSuggestion>(
         context: context,
         useRootNavigator: false,
         builder: (_) => IngestionPreviewDialog(
@@ -213,7 +218,7 @@ class _IngestionPageState extends State<IngestionPage> {
               item.status == 'PENDING_MATCH' && widget.assignment != null,
         ),
       );
-      if (category == null || !mounted) return;
+      if (suggestion == null || !mounted) return;
       setState(() => _busy = true);
       IngestionItem? current;
       try {
@@ -234,7 +239,11 @@ class _IngestionPageState extends State<IngestionPage> {
         _load(1);
         return;
       }
-      await _assign(current, category: category);
+      await _assign(
+        current,
+        category: suggestion.category,
+        caseNumbers: suggestion.caseNumbers,
+      );
     } finally {
       _previewing = false;
     }

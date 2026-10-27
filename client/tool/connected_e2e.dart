@@ -103,6 +103,7 @@ Future<void> inboxScenarios(
   _scenarios.add('真实归档去向、撤回待定、版本防重放、重新分类及下载字节一致');
   await ingestionPreviewScenario(first, emails[0], emails[1], password);
   _scenarios.add('真实 PDF/DOCX 正文提取、候选分类、重登与越权拒绝、原件保留及显式确认归档');
+  _scenarios.add('真实正文案号精确查找、同号多法院、软删除排除、他人隔离及人工选择后归档');
 }
 
 /// 只输出固定场景结果，不包含当事人资料、登录凭据或签名。

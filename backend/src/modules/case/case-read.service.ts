@@ -19,7 +19,7 @@ export class CaseReadService {
     const base = { page, pageSize, group: query.group, collaborationEnabled: false as const };
     if (query.group === 'collaborated') return { ...base, items: [], total: 0 };
     const keyword = query.keyword;
-    const where: Prisma.CaseWhereInput = { ownerId: userId, deletedAt: null, court: query.court,
+    const where: Prisma.CaseWhereInput = { ownerId: userId, deletedAt: null, court: query.court, caseNo: query.caseNo,
       stage: query.stage, status: query.status, ...(keyword ? { OR: [
         { caseNo: { contains: keyword.replaceAll('（', '(').replaceAll('）', ')') } },
         { cause: { contains: keyword } },

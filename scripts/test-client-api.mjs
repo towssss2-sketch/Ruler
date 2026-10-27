@@ -90,7 +90,7 @@ async function dart(origin, emails, storageOrigin) {
   });
   if (result.code !== 0) throw new Error('真实 Dart 客户端联调失败');
   const summary = JSON.parse(result.stdout);
-  assert.equal(summary.passed, useTls ? 22 : 21);
+  assert.equal(summary.passed, useTls ? 23 : 22);
   assert.equal(summary.failed, 0);
   assert.equal(summary.skipped, 0);
   assert.equal(summary.tls, useTls ? 'LOCAL_TRUSTED_CERTIFICATE' : 'HTTP_LOOPBACK');

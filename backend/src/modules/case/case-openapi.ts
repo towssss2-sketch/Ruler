@@ -31,6 +31,7 @@ export function casePageQueries(): MethodDecorator {
 /** 公开列表筛选参数，协作组仅预留；没有可指定 ownerId 的参数。 */
 export function caseListQueries(): MethodDecorator {
   return applyDecorators(casePageQueries(),
+    ApiQuery({ name: 'caseNo', required: false, type: String, description: '完整案号精确匹配，统一中英文括号及空白；与其他条件取交集' }),
     ...['keyword', 'court'].map((name): MethodDecorator => ApiQuery({ name, required: false, type: String })),
     ApiQuery({ name: 'stage', required: false, enum: CaseStage }), ApiQuery({ name: 'status', required: false, enum: CaseStatus }),
     ApiQuery({ name: 'sort', required: false, enum: ['asc', 'desc'] }),

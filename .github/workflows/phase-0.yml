@@ -269,6 +269,8 @@ jobs:
             test-results/client-ingestion-preview.png
             test-results/client-ingestion-preview-manual.png
             test-results/client-ingestion-preview-demo.png
+            test-results/client-ingestion-match.png
+            test-results/client-ingestion-match-demo.png
             test-results/client-validation-events.jsonl
           if-no-files-found: error
           retention-days: 14
