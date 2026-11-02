@@ -84,3 +84,5 @@ POST preview 的响应保持兼容，开始记录与审计原子提交；读取/
 GET /ingestion/:id/preview-attempts?page=1&pageSize=20 返回 {items,total,page,pageSize}，页面1–9999，大小1–100，原始重复/未知参数400；同一快照倒序 startedAt/id，实时校验本人未删除附件及有效账号。条目只含 id/status/reason/startedAt/finishedAt/retryable，private,no-store。没有正文、分类、案号、签名或底层异常。GET 不写库、不解析、不重试。
 
 客户端独立“提取记录”支持刷新/分页/错误；最新可重试项可明确回到提取入口，仍需人工确认归档。离线由 Provider 保存实际点击示例记录，退出页面保留、关闭应用清除。完整归集阶段持久化、队列、OCR/AI与自动重试待后续。回退应先停提取写入、等待在途结束；保留新表和原件/密钥/记录，不能混跑旧实例绕过新槽位协议。
+
+`test/ingestion/preview-process.e2e.ts` 补充真实进程恢复验证：隔离实例经 HTTP 创建尝试，在测试专用存储 read 接缝暂停后实际 SIGKILL，再启动未注入故障的新实例；自然等待原两分钟租期，显式重试使用真实 MinIO/PDF，核对旧中断记录、审计计数及不自动归档。它随 `npm run test:coverage` 自动执行并纳入正文提取报告，增加约两分钟，不改变生产租期/限流，不模拟数据库故障或宿主机断电。

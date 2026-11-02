@@ -7,11 +7,11 @@
 - 第13条向前迁移新增尝试元数据表，组合外键绑定同用户附件，数据库约束状态/时间/固定原因、每用户最多一个运行中尝试，身份/期限不可改、终态不可改写或删除。正文、文件名、分类、案号、对象键和签名不存入新表。
 - 沿用用户行锁，开始/结束及审计分别原子提交，读取和解析在事务外。两分钟数据库租期，GET 对过期运行记录只读呈现中断；新开始或迟到完成时固化旧中断。迟到/重复完成409，不覆盖新尝试；完成提交失败不返回正文。处理中删除则拒绝正文并释放槽位。
 - 新增授权历史 GET，重复/未知/非法参数400，稳定分页及快照计数，private,no-store。查看历史不启动解析或写库，不自动重放 POST。客户端支持刷新/分页/错误、主动重试、会话销毁与旧响应隔离。离线记录只来自实际点击的固定示例，返回页面保留、关闭应用清除。
-- 全部11类与人工确认保持；不是完整自动管道、正文缓存、后台恢复队列或OCR/AI。跨服务实例和独立数据库连接已验证，遗留运行记录用于模拟中断，未杀死实际服务器进程。
+- 全部11类与人工确认保持；不是完整自动管道、正文缓存、后台恢复队列或OCR/AI。跨服务实例和独立数据库连接已验证；本轮补充真实 SIGKILL/新 Node/Nest 进程/自然两分钟租期恢复。仅首次存储 read 接缝注入暂停，重试使用实际 MinIO/PDF；不等同宿主机断电或数据库故障。
 
 ## 实际检查
 
-- 后端 lint/typecheck/build、Prisma生成通过；全套452通过（新增真实HTTP/数据库8）、数据库57通过（新增约束3）、开发服务3通过；0失败/跳过。
+- 本轮后端 lint/typecheck/build、脚本语法检查通过；全套453通过（本阶段新增真实HTTP/数据库8＋实际进程中断1），56套、0失败/跳过。此前 Prisma生成、数据库57（新增约束3）、开发服务3通过；本轮未改应用、迁移或客户端，未重复执行这些历史检查。
 - Flutter analyze无问题、格式检查通过；全套253通过（新增仓库/协议5、Widget6），0失败/跳过。320×640深色1.4倍文字实际渲染可操作，两张新增截图已生成。
 - 真实Dart→Nest→PostgreSQL/Redis/MinIO：HTTP23、双HTTPS24、受限HTTPS24＋入口12通过。实际有效PDF/DOCX和损坏PDF验证成功/失败保留、GET不增加记录、独立尝试、重登、分页、忽略保留与他人隔离。
 - 空库、阶段0升级保留、重复迁移通过。敏感信息扫描、diff、生产文件≤400行/函数≤60行检查通过。本地APK已构建并通过apksigner校验；云端CI与Windows新包因GitHub API访问阻塞尚未核验，真实设备安装NOT_RUN。
@@ -21,7 +21,7 @@
 
 安装本轮包 → 开始虚构体验 → 材料待定区 → 添加虚构文件示例 → 提取记录（应为空）→ 关闭 → 查看正文示例 → 关闭 → 提取记录（应有一条成功）。刷新不增加条数；再次查看正文示例新增记录；返回案件列表再进入仍保留，完全关闭应用后清除离线记录。
 
-客户端中文报告为 ruler-client-experience/client-acceptance.html；client-preview-attempts.png 为故障协议替身，client-preview-attempts-demo.png 为实际离线小屏渲染，均不是设备截图。后端报告 ruler-ingestion-text-validation/ingestion-text-acceptance.html 包含37项提取专项结果。详细说明：docs/阶段6A4A验收报告.md。
+客户端中文报告为 ruler-client-experience/client-acceptance.html；client-preview-attempts.png 为故障协议替身，client-preview-attempts-demo.png 为实际离线小屏渲染，均不是设备截图。后端报告 ruler-ingestion-text-validation/ingestion-text-acceptance.html 包含38项提取专项结果，含实际进程恢复。详细说明：docs/阶段6A4A验收报告.md。
 
 ## 风险与回退
 
