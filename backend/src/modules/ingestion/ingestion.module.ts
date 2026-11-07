@@ -2,6 +2,8 @@ import { IngestionArchiveController, IngestionWithdrawGuard } from './ingestion-
 import { IngestionArchiveService } from './ingestion-archive.service';
 import { IngestionPreviewController } from './extraction/ingestion-preview.controller';
 import { PreviewAttemptService } from './extraction/preview-attempt.service';
+import { PreviewClassificationController } from './extraction/preview-classification.controller';
+import { PreviewClassificationService } from './extraction/preview-classification.service';
 import { IngestionPreviewService } from './extraction/ingestion-preview.service';
 import { DocumentTextExtractor } from './extraction/document-text-extractor';
 import { ResourceAccessModule } from '../case/resource-access.module';
@@ -23,8 +25,8 @@ import { IngestionFileRegisterService } from './ingestion-file-register.service'
 import { IngestionFileReadService } from './ingestion-file-read.service';
 import { IngestionFileCleanupService } from './ingestion-file-cleanup.service';
 
-@Module({ imports: [PrismaModule, StorageModule, ResourceAccessModule], controllers: [IngestionPreviewController, IngestionArchiveController, IngestionController, IngestionFileController, IngestionAssignController],
-  providers: [PreviewAttemptService, IngestionPreviewService, DocumentTextExtractor, IngestionArchiveService, IngestionWithdrawGuard, IngestionAssignGuard, IngestionAssignService, IngestionAssignTicketService, IngestionService, IngestionViewService, IngestionFileUploadService, IngestionFileRegisterService,
+@Module({ imports: [PrismaModule, StorageModule, ResourceAccessModule], controllers: [PreviewClassificationController, IngestionPreviewController, IngestionArchiveController, IngestionController, IngestionFileController, IngestionAssignController],
+  providers: [PreviewClassificationService, PreviewAttemptService, IngestionPreviewService, DocumentTextExtractor, IngestionArchiveService, IngestionWithdrawGuard, IngestionAssignGuard, IngestionAssignService, IngestionAssignTicketService, IngestionService, IngestionViewService, IngestionFileUploadService, IngestionFileRegisterService,
     IngestionFileReadService, IngestionFileCleanupService,
   { provide: EncryptionService, useFactory: (): EncryptionService => configuredCipher(process.env) }] })
 export class IngestionModule {}

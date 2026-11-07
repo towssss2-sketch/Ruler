@@ -5,6 +5,7 @@ import { mkdtempSync, mkdirSync, copyFileSync, writeFileSync, rmSync } from 'nod
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
+import { copyPreviousMigrations, seedPreviousAttempts, verifyPreviousAttempts } from './classification-upgrade-fixture.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const backend = resolve(root, 'backend');
@@ -81,12 +82,19 @@ model EnvironmentProbe {
     probe = await oldClient.environmentProbe.create({ data: { label: '阶段0虚构探针保留' } });
   }
   finally { await oldClient.$disconnect(); }
+  copyPreviousMigrations(backend, oldRoot);
+  migrate(upgrade, resolve(oldRoot, 'schema.prisma'), resolve(oldRoot, 'prisma.config.ts'));
+  const previousClient = new PrismaClient({ datasourceUrl: schemaUrl(upgrade) });
+  let previewFixture;
+  try { previewFixture = await seedPreviousAttempts(previousClient); }
+  finally { await previousClient.$disconnect(); }
   for (const schema of [fresh, upgrade]) {
     migrate(schema, resolve(backend, 'prisma'));
     migrate(schema, resolve(backend, 'prisma'));
   }
   const upgradedClient = new PrismaClient({ datasourceUrl: schemaUrl(upgrade) });
   try {
+    await verifyPreviousAttempts(upgradedClient, previewFixture);
     assert.equal((await upgradedClient.environmentProbe.findUniqueOrThrow({ where: { id: probe.id } })).label, '阶段0虚构探针保留');
     await upgradedClient.user.create({ data: { email: `upgrade-${runId}@example.invalid`, name: '升级虚构律师', passwordHash: 'TEST_ONLY_HASH' } });
   } finally { await upgradedClient.$disconnect(); }

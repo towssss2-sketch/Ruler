@@ -6,6 +6,7 @@ import { PrismaRepository } from '../../../prisma.repository';
 import { PageInput } from '../../case/case-input';
 import { lockIngestionOwner } from '../ingestion-file-policy';
 import { ExtractionResult } from './extraction-result';
+import { suggestDocument } from './document-rules';
 import { PreviewAttemptPage, previewAttemptView } from './preview-attempt-view';
 
 /** 原件提取尝试独立于归档状态；数据库租期避免重启后永久卡住及迟到覆写。 */
@@ -48,8 +49,12 @@ export class PreviewAttemptService {
       const now = await this.now(tx);
       if (row.leaseExpiresAt <= now) { await this.interrupt(tx, row); return false; }
       const reason = result.state === 'MANUAL_REQUIRED' ? result.reason : null;
+      const classification = result.state === 'TEXT' ? suggestDocument(result.text) : null;
       await tx.ingestionPreviewAttempt.update({ where: { id: attemptId }, data: {
-        status: result.state === 'TEXT' ? 'SUCCEEDED' : 'MANUAL_REQUIRED', reason, finishedAt: now } });
+        status: result.state === 'TEXT' ? 'SUCCEEDED' : 'MANUAL_REQUIRED', reason, finishedAt: now,
+        classificationCategory: classification?.category ?? null,
+        classificationReason: classification?.reason ?? null,
+        classificationRuleVersion: classification?.ruleVersion ?? null } });
       await this.audit(tx, userId, id, attemptId, 'INGESTION_PREVIEW_FINISHED',
         { state: result.state, ...(reason ? { reason } : {}) });
       return true;

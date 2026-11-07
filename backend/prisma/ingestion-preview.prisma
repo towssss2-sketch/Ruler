@@ -1,4 +1,4 @@
-// 仅保存正文提取尝试的状态元数据，不存正文、分类、案号或对象地址。
+// 保存提取状态与最小规则分类元数据，不存正文、案号或对象地址。
 enum PreviewAttemptStatus {
   RUNNING
   SUCCEEDED
@@ -15,6 +15,9 @@ model IngestionPreviewAttempt {
   startedAt      DateTime             @default(now()) @db.Timestamptz(3)
   leaseExpiresAt DateTime             @db.Timestamptz(3)
   finishedAt     DateTime?            @db.Timestamptz(3)
+  classificationCategory    DocumentCategory?
+  classificationReason      String? @db.VarChar(32)
+  classificationRuleVersion String? @db.VarChar(32)
 
   file IngestionFile @relation(fields: [ingestionId, userId], references: [ingestionId, userId], onDelete: Restrict)
 

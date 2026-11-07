@@ -86,3 +86,9 @@ GET /ingestion/:id/preview-attempts?page=1&pageSize=20 返回 {items,total,page,
 客户端独立“提取记录”支持刷新/分页/错误；最新可重试项可明确回到提取入口，仍需人工确认归档。离线由 Provider 保存实际点击示例记录，退出页面保留、关闭应用清除。完整归集阶段持久化、队列、OCR/AI与自动重试待后续。回退应先停提取写入、等待在途结束；保留新表和原件/密钥/记录，不能混跑旧实例绕过新槽位协议。
 
 `test/ingestion/preview-process.e2e.ts` 补充真实进程恢复验证：隔离实例经 HTTP 创建尝试，在测试专用存储 read 接缝暂停后实际 SIGKILL，再启动未注入故障的新实例；自然等待原两分钟租期，显式重试使用真实 MinIO/PDF，核对旧中断记录、审计计数及不自动归档。它随 `npm run test:coverage` 自动执行并纳入正文提取报告，增加约两分钟，不改变生产租期/限流，不模拟数据库故障或宿主机断电。
+
+## 6A4B1：规则分类结果保存
+
+第14条迁移增加 classificationCategory/classificationReason/classificationRuleVersion，成功提取时与状态/结束审计同事务保存。分类只用原 title-v1 和既有类别；新列没有正文、案号、文件名或对象地址。数据库要求全空或成功记录的完整合法组合，终态不可改写包括新增列，旧记录不回填。
+
+GET `/ingestion/:id/preview-attempts/:attemptId/classification` 只读本人指定尝试，返回 `{attemptId,state,classification}`。RECORDED 时 classification 含 category/ruleVersion/reason/requiresConfirmation；旧成功记录为 NOT_RECORDED，其他提取状态为 NOT_AVAILABLE，后两者 classification=null。无查询参数；鉴权/附件归属/账号有效性/尝试关联实时检查，private,no-store。GET 不重新运行规则、不解析或写入，原预览与历史列表接口保持兼容。客户端历史分类入口尚未接入。
