@@ -3,6 +3,8 @@ import '../domain/preview_attempts.dart';
 import '../domain/ingestion_preview.dart';
 import '../domain/online.dart';
 import 'online_widgets.dart';
+import '../domain/saved_classification.dart';
+import 'saved_classification_dialog.dart';
 
 /// 返回 true 仅表示用户明确要求再次提取，不会自动重放未知结果的 POST。
 Future<bool?> showPreviewAttempts(
@@ -69,7 +71,7 @@ class _PreviewAttemptsDialogState extends State<PreviewAttemptsDialog> {
         Text(
           widget.offline
               ? '仅记录本次虚构体验，关闭应用清除；没有解析真实文件。'
-              : '只保存处理状态，不保存提取正文。查看记录不会重新提取或改变归档。',
+              : '保存处理状态和分类建议，不保存提取正文。查看记录不会重新提取或改变归档。',
         ),
         const SizedBox(height: 12),
         if (result.items.isEmpty)
@@ -106,6 +108,18 @@ class _PreviewAttemptsDialogState extends State<PreviewAttemptsDialog> {
           const Text('在允许的时间内未确认完成，可能因服务中断。原件保留，可重新提取。'),
         if (item.status == 'SUCCEEDED')
           const Text('本次提取完成，不代表已归档。再次查看正文需要重新提取。'),
+        if (item.status == 'SUCCEEDED' &&
+            widget.repository is SavedClassifications)
+          OutlinedButton(
+            onPressed: () => showSavedClassification(
+              context,
+              widget.id,
+              item.id,
+              widget.repository as SavedClassifications,
+              widget.offline,
+            ),
+            child: const Text('查看已保存分类'),
+          ),
       ],
     ),
   );

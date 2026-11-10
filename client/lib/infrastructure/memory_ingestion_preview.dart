@@ -2,13 +2,28 @@ import '../domain/ingestion_preview.dart';
 import '../domain/ingestion.dart';
 import '../domain/online.dart';
 import '../domain/preview_attempts.dart';
+import '../domain/saved_classification.dart';
 
 /// 固定虚构正文，仅用于离线点击体验，不读取设备或声称执行 PDF 解析。
-class MemoryIngestionPreview implements IngestionPreview, PreviewAttempts {
+class MemoryIngestionPreview
+    implements IngestionPreview, PreviewAttempts, SavedClassifications {
   MemoryIngestionPreview(this.inbox);
   final IngestionRepository inbox;
   int _attempt = 0;
   final _history = <String, List<PreviewAttempt>>{};
+  final _classifications = <String, SavedClassification>{};
+  @override
+  Future<SavedClassification> classification(
+    String id,
+    String attemptId,
+  ) async {
+    if ((await inbox.detail(id)).file == null ||
+        !(_history[id] ?? []).any((row) => row.id == attemptId)) {
+      throw const ApiFailure('这份材料没有对应的分类记录。');
+    }
+    return _classifications[attemptId]!;
+  }
+
   @override
   Future<OnlinePage<PreviewAttempt>> attempts(String id, {int page = 1}) async {
     if (page < 1 || page > 9999) throw const ApiFailure('页码无效。');
@@ -37,6 +52,13 @@ class MemoryIngestionPreview implements IngestionPreview, PreviewAttempts {
         startedAt: now,
         finishedAt: now,
       ),
+    );
+    _classifications[attemptId] = SavedClassification(
+      attemptId: attemptId,
+      state: 'RECORDED',
+      category: 'SERVICE_CONTRACT',
+      reason: 'TITLE_MATCH',
+      ruleVersion: 'title-v1',
     );
     return IngestionPreviewResult(
       attemptId: attemptId,

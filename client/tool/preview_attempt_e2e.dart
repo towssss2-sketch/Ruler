@@ -26,6 +26,16 @@ Future<void> verifyPreviewAttempts(
   );
   check((await api.attempts(id)).total == count);
   check((await api.attempts(id, page: 2)).items.isEmpty);
+  for (final item in page.items) {
+    final saved = await api.classification(id, item.id);
+    check(saved.state == 'RECORDED' && saved.ruleVersion == 'title-v1');
+    check(saved.reason == 'TITLE_MATCH' || saved.reason == 'NO_TITLE');
+    check(
+      saved.category ==
+          (saved.reason == 'TITLE_MATCH' ? 'SERVICE_CONTRACT' : null),
+    );
+  }
+  check((await api.attempts(id)).total == count);
 }
 
 /// 真正上传损坏 PDF，解析器给固定失败原因；失败历史不丢，重新提取产生独立记录。
@@ -65,4 +75,8 @@ Future<void> verifyFailedAttempts(
   );
   await ApiIngestion(session).ignore(receipt.id);
   check((await api.attempts(receipt.id)).total == 2);
+  for (final item in history.items) {
+    final saved = await api.classification(receipt.id, item.id);
+    check(saved.state == 'NOT_AVAILABLE' && saved.category == null);
+  }
 }

@@ -179,6 +179,18 @@ void main() {
     await tap(tester, '提取记录');
     expect(find.text('提取成功'), findsOneWidget);
     await captureOnline(tester, fileName: 'client-preview-attempts-demo.png');
+    await historyTap(tester, '查看已保存分类');
+    expect(find.text('虚构分类建议'), findsOneWidget);
+    expect(find.text('建议分类：服务合同'), findsOneWidget);
+    await captureOnline(
+      tester,
+      fileName: 'client-saved-classification-demo.png',
+    );
+    await tester.ensureVisible(find.text('查看或刷新不会重新提取，也不会自动归档。'));
+    await tester.pumpAndSettle();
+    expect(find.text('查看或刷新不会重新提取，也不会自动归档。').hitTestable(), findsOneWidget);
+    await tap(tester, '刷新分类');
+    await tap(tester, '返回记录');
     await tap(tester, '关闭');
     await tester.pageBack();
     await tester.pumpAndSettle();

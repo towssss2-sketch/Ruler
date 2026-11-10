@@ -91,4 +91,4 @@ GET /ingestion/:id/preview-attempts?page=1&pageSize=20 返回 {items,total,page,
 
 第14条迁移增加 classificationCategory/classificationReason/classificationRuleVersion，成功提取时与状态/结束审计同事务保存。分类只用原 title-v1 和既有类别；新列没有正文、案号、文件名或对象地址。数据库要求全空或成功记录的完整合法组合，终态不可改写包括新增列，旧记录不回填。
 
-GET `/ingestion/:id/preview-attempts/:attemptId/classification` 只读本人指定尝试，返回 `{attemptId,state,classification}`。RECORDED 时 classification 含 category/ruleVersion/reason/requiresConfirmation；旧成功记录为 NOT_RECORDED，其他提取状态为 NOT_AVAILABLE，后两者 classification=null。无查询参数；鉴权/附件归属/账号有效性/尝试关联实时检查，private,no-store。GET 不重新运行规则、不解析或写入，原预览与历史列表接口保持兼容。客户端历史分类入口尚未接入。
+GET `/ingestion/:id/preview-attempts/:attemptId/classification` 只读本人指定尝试，返回 `{attemptId,state,classification}`。RECORDED 时 classification 含 category/ruleVersion/reason/requiresConfirmation；旧成功记录为 NOT_RECORDED，其他提取状态为 NOT_AVAILABLE，后两者 classification=null。无查询参数；鉴权/附件归属/账号有效性/尝试关联实时检查，private,no-store。GET 不重新运行规则、不解析或写入，原预览与历史列表接口保持兼容。6A4B2客户端已从成功提取记录接入历史分类展示，仍只读并需人工确认归档。

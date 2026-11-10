@@ -124,6 +124,12 @@ Future<void> previewReopen(
     await forbidden(() async {
       await ApiIngestionPreview(other).attempts(id);
     });
+    final ownAttempt = (await ApiIngestionPreview(
+      reopened,
+    ).attempts(id)).items.first;
+    await forbidden(() async {
+      await ApiIngestionPreview(other).classification(id, ownAttempt.id);
+    });
     await reopened.logout();
     await other.logout();
   } finally {

@@ -4,12 +4,26 @@ import '../domain/online.dart';
 import 'api_session.dart';
 import '../domain/preview_attempts.dart';
 import 'preview_attempt_wire.dart';
+import '../domain/saved_classification.dart';
+import 'saved_classification_wire.dart';
 
 const _invalidPreview = ApiFailure('正文预览响应格式异常，请稍后重试。');
 
-class ApiIngestionPreview implements IngestionPreview, PreviewAttempts {
+class ApiIngestionPreview
+    implements IngestionPreview, PreviewAttempts, SavedClassifications {
   ApiIngestionPreview(this.session);
   final ApiSession session;
+  @override
+  Future<SavedClassification> classification(
+    String id,
+    String attemptId,
+  ) async => readSavedClassification(
+    await session.request(
+      'GET',
+      '/ingestion/${Uri.encodeComponent(id)}/preview-attempts/${Uri.encodeComponent(attemptId)}/classification',
+    ),
+    attemptId,
+  );
   @override
   Future<OnlinePage<PreviewAttempt>> attempts(String id, {int page = 1}) async {
     if (page < 1 || page > 9999) throw const ApiFailure('页码无效。');
